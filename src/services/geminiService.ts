@@ -1,8 +1,7 @@
 import { TarotCard } from '../types';
 
-// Vercel подставит этот ключ сам во время сборки
-const API_KEY = import.meta.env.VITE_OPENROUTER_KEY;
-const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const API_KEY = "ТВОЙ_КЛЮЧ_OPENROUTER_ИЛИ_GEMINI"; 
+const API_URL = "https://openrouter.ai/api/v1/chat/completions"; // Или Google API
 
 export const analyzeRelationship = async (
   card1: TarotCard, 
@@ -10,26 +9,38 @@ export const analyzeRelationship = async (
   userProblem: string
 ): Promise<string> => {
 
-  if (!API_KEY) {
-    return "ОШИБКА: Нет API ключа. Настройте VITE_OPENROUTER_KEY в Vercel.";
-  }
-
+  // Формируем "Злой" Промпт
   const prompt = `
-    ROLE: You are "Astra Hero" — a cynical, Jungian psychologist.
-    TONE: Ironic, sharp, cinematic, brutal honesty.
+    ROLE: You are "Astra Hero" — a cynical, Jungian psychologist and profiler. 
+    TONE: Ironic, sharp, cinematic, brutal honesty. No esoteric fluff.
+    
     TASK: Analyze a relationship based on two Tarot cards and the user's complaint.
-    USER'S COMPLAINT: "${userProblem || "Silence."}"
+    
+    USER'S COMPLAINT (CONTEXT): "${userProblem || "The user is silent, but the cards speak."}"
     
     CARDS:
-    1. HIM: ${card1.name} ("${card1.desc_general}")
-    2. HER: ${card2.name} ("${card2.desc_general}")
+    1. HIM (The Man): ${card1.name}
+       Archetype Meaning: "${card1.desc_general}"
+    2. HER (The Woman): ${card2.name}
+       Archetype Meaning: "${card2.desc_general}"
     
-    OUTPUT FORMAT (in Russian):
-    1. 🎬 СЦЕНА
-    2. 🩺 ДИАГНОЗ
-    3. 🧠 ПРОФИЛЬ (Он/Она/Химия)
-    4. 💊 РЕЦЕПТ (Ему/Ей/Вместе)
-    5. ⚖️ ВЕРДИКТ
+    INSTRUCTIONS:
+    1. Analyze how these specific archetypes interact in the context of the user's problem.
+    2. Use the provided "Archetype Meanings" as the base truth.
+    3. Respond in Russian.
+    
+    RESPONSE STRUCTURE:
+    1. 🎬 СЦЕНА: A short visual metaphor of their interaction (max 2 sentences).
+    2. 🩺 ДИАГНОЗ: A short, ironic title for their problem (e.g., "Mutual Parasitism").
+    3. 🧠 ПРОФИЛЬ:
+       - HIM: Why is he acting this way? (Psychological motive).
+       - HER: What is her trigger?
+       - CHEMISTRY: The toxic loop.
+    4. 💊 РЕЦЕПТ (Actionable Advice):
+       - HIM: Specific instruction.
+       - HER: Specific instruction.
+       - TOGETHER: How to break the loop.
+    5. ⚖️ ВЕРДИКТ: One final cynical sentence.
   `;
 
   try {
@@ -38,20 +49,20 @@ export const analyzeRelationship = async (
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://astra-hero.vercel.app', 
+        // 'HTTP-Referer': 'https://your-site.com', // Для OpenRouter
       },
       body: JSON.stringify({
-        model: "google/gemini-pro-1.5",
+        model: "google/gemini-pro-1.5", // Рекомендую эту модель
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.8
+        temperature: 0.8 // Чуть больше креатива
       })
     });
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || "Ошибка ответа AI";
+    return data.choices[0].message.content;
 
   } catch (error) {
     console.error("AI Error:", error);
-    return "Оракул недоступен.";
+    return "Оракул ушел в запой. Попробуйте позже.";
   }
 };
