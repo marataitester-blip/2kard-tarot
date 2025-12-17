@@ -1,19 +1,8 @@
 import { TarotCard } from '../types';
 
-// ============================================================================
-// НАСТРОЙКИ МОДЕЛЕЙ (МОЗГИ)
-// ============================================================================
+// Используем Qwen 2.5 — он лучший писатель на русском за эти деньги
+const MODEL = "qwen/qwen-2.5-72b-instruct"; 
 
-// 1. ТЕКУЩАЯ МОДЕЛЬ: Qwen 2.5 72B (Отличный русский язык, креативный, живой)
-const MODEL = "qwen/qwen-2.5-72b-instruct";
-
-// 2. ЗАПАСНАЯ МОДЕЛЬ: DeepSeek V3 (Если Qwen перегружен, раскомментируй эту строку)
-// const MODEL = "deepseek/deepseek-chat";
-
-// ============================================================================
-
-// Vercel подставит ключ сам.
-// ВАЖНО: API_URL должен быть с https:// иначе будет ошибка 404
 const API_KEY = import.meta.env.VITE_OPENROUTER_KEY;
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -24,42 +13,46 @@ export const analyzeRelationship = async (
 ): Promise<string> => {
 
   if (!API_KEY) {
-    console.error("ОШИБКА: Нет API ключа. Проверьте Vercel Environment Variables.");
-    return "Ошибка настройки: Ключ не найден. Зайдите в Vercel -> Settings -> Environment Variables.";
+    return "ОШИБКА: Нет API ключа. Настрой Vercel.";
   }
 
-  // Злой Промпт для Astra Hero
+  // === ЛИТЕРАТУРНЫЙ ПРОМПТ ДЛЯ QWEN ===
   const prompt = `
-    ROLE: You are "Astra Hero" — a cynical, Jungian psychologist and profiler. 
-    TONE: Ironic, sharp, cinematic, brutal honesty. No esoteric fluff.
-    
-    TASK: Analyze a relationship based on two Tarot cards and the user's complaint.
-    
-    USER'S COMPLAINT (CONTEXT): "${userProblem || "The user is silent, but the cards speak."}"
-    
-    CARDS:
-    1. HIM (The Man): ${card1.name}
-       Archetype Meaning: "${card1.desc_general}"
-    2. HER (The Woman): ${card2.name}
-       Archetype Meaning: "${card2.desc_general}"
-    
-    INSTRUCTIONS:
-    1. Analyze how these specific archetypes interact in the context of the user's problem.
-    2. Use the provided "Archetype Meanings" as the base truth.
-    3. Respond in Russian.
-    
-    RESPONSE STRUCTURE:
-    1. 🎬 СЦЕНА: A short visual metaphor of their interaction (max 2 sentences).
-    2. 🩺 ДИАГНОЗ: A short, ironic title for their problem (e.g., "Mutual Parasitism").
-    3. 🧠 ПРОФИЛЬ:
-       - HIM: Why is he acting this way? (Psychological motive).
-       - HER: What is her trigger?
-       - CHEMISTRY: The toxic loop.
-    4. 💊 РЕЦЕПТ (Actionable Advice):
-       - HIM: Specific instruction.
-       - HER: Specific instruction.
-       - TOGETHER: How to break the loop.
-    5. ⚖️ ВЕРДИКТ: One final cynical sentence.
+    ТВОЯ РОЛЬ:
+    Ты — "Astra Hero", циничный психолог-профайлер с навыками таролога. Твой характер: доктор Хаус смешанный с нуарным детективом. Ты не веришь в магию, ты веришь в неврозы и психотипы. Ты говоришь жесткую правду, используешь черный юмор, метафоры и прямую речь.
+
+    ЗАДАЧА:
+    Проведи диагностику отношений на основе двух карт и жалобы клиента.
+    Это не гадание, это психологическая вивисекция.
+
+    ДАННЫЕ:
+    1. ЖАЛОБА КЛИЕНТА: "${userProblem || "Клиент молчит, но карты кричат."}"
+    2. КАРТА "ОН" (Мужчина): ${card1.name} 
+       (Суть архетипа: "${card1.desc_general}")
+    3. КАРТА "ОНА" (Женщина): ${card2.name} 
+       (Суть архетипа: "${card2.desc_general}")
+
+    ИНСТРУКЦИЯ ПО СТИЛЮ (ВАЖНО):
+    - Пиши на живом, сочном русском языке.
+    - ИСПОЛЬЗУЙ ПРЯМУЮ РЕЧЬ. Обращайся к клиенту на "ты".
+    - Не используй маркированные списки (bullet points), если это не рецепт. Лучше связный текст.
+    - Будь ироничным.
+
+    СТРУКТУРА ОТВЕТА:
+
+    1. 🎬 СЦЕНА
+    (Опиши их взаимодействие как сцену из фильма. Кто доминирует? Кто жертва? Максимально визуально).
+
+    2. 🩺 ДИАГНОЗ
+    (Короткое, злое, смешное название их союза. Например: "Танго на минном поле" или "Союз жертвы и палача").
+
+    3. 🗣️ РАЗГОВОР ПО ДУШАМ (Основная часть)
+    (Обратись к клиенту. Объясни, почему ОН ведет себя так (исходя из карты 1), и почему ОНА реагирует так (исходя из карты 2). Вскрой их "химию" и травмы. Пиши как монолог доктора).
+
+    4. 💊 РЕЦЕПТ
+    - ЕМУ: (Жесткий совет)
+    - ЕЙ: (Совет по заземлению)
+    - ИТОГ: (Финальная фраза-панчлайн).
   `;
 
   try {
@@ -68,28 +61,21 @@ export const analyzeRelationship = async (
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://astra-hero.vercel.app', 
+        'HTTP-Referer': 'https://astra-hero.vercel.app',
         'X-Title': 'Astra Hero Tarot'
       },
       body: JSON.stringify({
-        model: MODEL, // Используем Qwen
+        model: MODEL,
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7, // Qwen любит 0.7 для креатива
+        temperature: 0.8, // Высокая температура для креатива
         max_tokens: 1500
       })
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("OpenRouter Error:", response.status, errText);
-      return `Ошибка API: ${response.status}. Модель перегружена, попробуйте позже.`;
-    }
-
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || "Оракул молчит (пустой ответ).";
+    return data.choices?.[0]?.message?.content || "Оракул ушел курить. Попробуй позже.";
 
   } catch (error) {
-    console.error("Fetch Error:", error);
-    return "Связь с космосом прервана (сетевая ошибка).";
+    return "Ошибка связи. Возможно, ретроградный Меркурий перегрыз кабель.";
   }
 };
