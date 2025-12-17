@@ -1,7 +1,8 @@
 import { TarotCard } from '../types';
 
-const API_KEY = "ТВОЙ_КЛЮЧ_OPENROUTER_ИЛИ_GEMINI"; 
-const API_URL = "https://openrouter.ai/api/v1/chat/completions"; // Или Google API
+// Vercel сам подставит сюда ключ, который ты добавишь в настройках сайта
+const API_KEY = import.meta.env.VITE_OPENROUTER_KEY;
+const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 export const analyzeRelationship = async (
   card1: TarotCard, 
@@ -9,7 +10,13 @@ export const analyzeRelationship = async (
   userProblem: string
 ): Promise<string> => {
 
-  // Формируем "Злой" Промпт
+  // Проверка: Если ключа нет, не ломаем приложение, а говорим об этом
+  if (!API_KEY) {
+    console.error("Ключ VITE_OPENROUTER_KEY не найден!");
+    return "Ошибка настройки: Нет API ключа. Проверьте Vercel Environment Variables.";
+  }
+
+  // Формируем "Злой" Промпт для ИИ
   const prompt = `
     ROLE: You are "Astra Hero" — a cynical, Jungian psychologist and profiler. 
     TONE: Ironic, sharp, cinematic, brutal honesty. No esoteric fluff.
@@ -25,22 +32,22 @@ export const analyzeRelationship = async (
        Archetype Meaning: "${card2.desc_general}"
     
     INSTRUCTIONS:
-    1. Analyze how these specific archetypes interact in the context of the user's problem.
+    1. Analyze how these specific archetypes interact.
     2. Use the provided "Archetype Meanings" as the base truth.
     3. Respond in Russian.
     
     RESPONSE STRUCTURE:
-    1. 🎬 СЦЕНА: A short visual metaphor of their interaction (max 2 sentences).
-    2. 🩺 ДИАГНОЗ: A short, ironic title for their problem (e.g., "Mutual Parasitism").
+    1. 🎬 СЦЕНА: Visual metaphor (max 2 sentences).
+    2. 🩺 ДИАГНОЗ: Ironic title (e.g. "Mutual Parasitism").
     3. 🧠 ПРОФИЛЬ:
-       - HIM: Why is he acting this way? (Psychological motive).
-       - HER: What is her trigger?
+       - HIM: His neurosis/motive.
+       - HER: Her trigger/reaction.
        - CHEMISTRY: The toxic loop.
     4. 💊 РЕЦЕПТ (Actionable Advice):
-       - HIM: Specific instruction.
-       - HER: Specific instruction.
+       - HIM: Instruction.
+       - HER: Instruction.
        - TOGETHER: How to break the loop.
-    5. ⚖️ ВЕРДИКТ: One final cynical sentence.
+    5. ⚖️ ВЕРДИКТ: Final cynical sentence.
   `;
 
   try {
@@ -49,20 +56,21 @@ export const analyzeRelationship = async (
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
-        // 'HTTP-Referer': 'https://your-site.com', // Для OpenRouter
+        'HTTP-Referer': 'https://astra-hero.vercel.app', // Для OpenRouter
       },
       body: JSON.stringify({
-        model: "google/gemini-pro-1.5", // Рекомендую эту модель
+        model: "google/gemini-pro-1.5", // Или "google/gemini-flash-1.5" (дешевле)
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.8 // Чуть больше креатива
+        temperature: 0.8 
       })
     });
 
     const data = await response.json();
-    return data.choices[0].message.content;
+    // Возвращаем текст ответа или сообщение об ошибке, если ответ пуст
+    return data.choices?.[0]?.message?.content || "Оракул молчит (ошибка API).";
 
   } catch (error) {
     console.error("AI Error:", error);
-    return "Оракул ушел в запой. Попробуйте позже.";
+    return "Связь с космосом прервана. Попробуйте позже.";
   }
 };
