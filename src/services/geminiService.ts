@@ -4,14 +4,16 @@ import { TarotCard } from '../types';
 // НАСТРОЙКИ МОДЕЛЕЙ (МОЗГИ)
 // ============================================================================
 
-// 1. ОСНОВНАЯ МОДЕЛЬ: DeepSeek V3 (Умный, дешевый, циничный)
-const MODEL = "deepseek/deepseek-chat";
+// 1. ТЕКУЩАЯ МОДЕЛЬ: Qwen 2.5 72B (Отличный русский язык, креативный, живой)
+const MODEL = "qwen/qwen-2.5-72b-instruct";
 
-// 2. ЗАПАСНАЯ МОДЕЛЬ: Qwen 2.5 72B (Если Дипсик зависнет, раскомментируй эту строку)
-// const MODEL = "qwen/qwen-2.5-72b-instruct";
+// 2. ЗАПАСНАЯ МОДЕЛЬ: DeepSeek V3 (Если Qwen перегружен, раскомментируй эту строку)
+// const MODEL = "deepseek/deepseek-chat";
 
 // ============================================================================
 
+// Vercel подставит ключ сам.
+// ВАЖНО: API_URL должен быть с https:// иначе будет ошибка 404
 const API_KEY = import.meta.env.VITE_OPENROUTER_KEY;
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -21,10 +23,9 @@ export const analyzeRelationship = async (
   userProblem: string
 ): Promise<string> => {
 
-  // Проверка ключа
   if (!API_KEY) {
     console.error("ОШИБКА: Нет API ключа. Проверьте Vercel Environment Variables.");
-    return "Ошибка настройки: Ключ VITE_OPENROUTER_KEY не найден.";
+    return "Ошибка настройки: Ключ не найден. Зайдите в Vercel -> Settings -> Environment Variables.";
   }
 
   // Злой Промпт для Astra Hero
@@ -43,7 +44,7 @@ export const analyzeRelationship = async (
        Archetype Meaning: "${card2.desc_general}"
     
     INSTRUCTIONS:
-    1. Analyze how these specific archetypes interact.
+    1. Analyze how these specific archetypes interact in the context of the user's problem.
     2. Use the provided "Archetype Meanings" as the base truth.
     3. Respond in Russian.
     
@@ -67,13 +68,13 @@ export const analyzeRelationship = async (
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://astra-hero.vercel.app', // Обязательно для OpenRouter
+        'HTTP-Referer': 'https://astra-hero.vercel.app', 
         'X-Title': 'Astra Hero Tarot'
       },
       body: JSON.stringify({
-        model: MODEL, // Здесь используется выбранная вверху модель
+        model: MODEL, // Используем Qwen
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7, // 0.7 - оптимально для Дипсика (не бредит, но креативит)
+        temperature: 0.7, // Qwen любит 0.7 для креатива
         max_tokens: 1500
       })
     });
@@ -81,14 +82,14 @@ export const analyzeRelationship = async (
     if (!response.ok) {
       const errText = await response.text();
       console.error("OpenRouter Error:", response.status, errText);
-      return `Ошибка API: ${response.status}. Возможно, модель перегружена.`;
+      return `Ошибка API: ${response.status}. Модель перегружена, попробуйте позже.`;
     }
 
     const data = await response.json();
     return data.choices?.[0]?.message?.content || "Оракул молчит (пустой ответ).";
 
   } catch (error) {
-    console.error("Network Error:", error);
-    return "Связь с космосом прервана. Проверьте интернет.";
+    console.error("Fetch Error:", error);
+    return "Связь с космосом прервана (сетевая ошибка).";
   }
 };
