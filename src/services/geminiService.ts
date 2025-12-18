@@ -1,12 +1,11 @@
 import { TarotCard } from '../types';
 
-// Ключ берем из Vercel (как мы настроили)
-const API_KEY = import.meta.env.VITE_OPENAI_KEY; 
+// Мы удалили лишнюю строку const API_KEY = ..., из-за которой была ошибка.
 
 export const analyzeRelationship = async (
-  cards: TarotCard[], // Теперь принимаем массив (2 или 4 карты)
+  cards: TarotCard[], 
   userProblem: string,
-  mode: 'RELATIONSHIPS' | 'FINANCE' // Знаем режим
+  mode: 'RELATIONSHIPS' | 'FINANCE'
 ): Promise<string> => {
   
   // Выбираем "Личность" в зависимости от режима
@@ -46,16 +45,22 @@ export const analyzeRelationship = async (
       * Старшие арканы = Макроэкономические факторы и форс-мажоры.
     `;
     
+    // Проверка, чтобы не упало, если вдруг карт меньше 4 (хотя TypeScript это контролирует)
+    const card1 = cards[0];
+    const card2 = cards[1];
+    const card3 = cards[2] || { name: "Неизвестно" };
+    const card4 = cards[3] || { name: "Неизвестно" };
+
     userPrompt = `
       Финансовый запрос клиента: "${userProblem}"
       
       === ЭТАП 1: БАЗОВЫЙ АУДИТ ===
-      1. ТЫ (Твой Актив): ${cards[0].name}. (Кто ты на рынке? Акула или планктон?)
-      2. ДЕНЬГИ (Поток): ${cards[1].name}. (Деньги любят тебя или избегают?)
+      1. ТЫ (Твой Актив): ${card1.name}. (Кто ты на рынке? Акула или планктон?)
+      2. ДЕНЬГИ (Поток): ${card2.name}. (Деньги любят тебя или избегают?)
       
       === ЭТАП 2: КОНФЛИКТ СТРАТЕГИЙ ===
-      3. ТВОИ АМБИЦИИ (План): ${cards[2].name}. (Что ты придумал? Твоя жадность или стратегия).
-      4. РЕАЛЬНОСТЬ (Тормоза): ${cards[3].name}. (Где ты теряешь? Скрытые убытки или риски).
+      3. ТВОИ АМБИЦИИ (План): ${card3.name}. (Что ты придумал? Твоя жадность или стратегия).
+      4. РЕАЛЬНОСТЬ (Тормоза): ${card4.name}. (Где ты теряешь? Скрытые убытки или риски).
       
       === СТРУКТУРА ОТВЕТА ===
       
@@ -73,20 +78,22 @@ export const analyzeRelationship = async (
   }
 
   try {
-    // Используем тот же шлюз /api/tts (или создадим новый для текста, если нужно)
-    // НО! Сейчас у нас OpenAI в tts.js, а для текста мы ходим в OpenRouter или тоже в OpenAI?
-    // Давай используем OpenRouter для Текста (это дешевле для тестов), или OpenAI если ключ универсальный.
-    // Если у тебя ключ OpenAI платный - лучше ходить в OpenAI (модель gpt-4o-mini).
+    // ВАЖНО: Убедись, что в Vercel добавлен ключ VITE_OPENROUTER_KEY или замени здесь на VITE_OPENAI_KEY
+    const apiKey = import.meta.env.VITE_OPENAI_KEY || import.meta.env.VITE_OPENROUTER_KEY;
     
+    if (!apiKey) {
+        return "Ошибка: Нет ключа API (VITE_OPENAI_KEY).";
+    }
+
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_KEY}`, // Или VITE_OPENAI_KEY
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://astra-hero.vercel.app", 
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini", // Дешевая и умная модель
+        model: "openai/gpt-4o-mini", // Или другая модель
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -95,8 +102,12 @@ export const analyzeRelationship = async (
       }),
     });
 
+    if (!response.ok) {
+        return `Ошибка API: ${response.status}`;
+    }
+
     const data = await response.json();
-    return data.choices[0].message.content || "Космос молчит. Попробуй позже.";
+    return data.choices?.[0]?.message?.content || "Космос молчит. Попробуй позже.";
   } catch (error) {
     console.error("AI Error:", error);
     return "Ошибка анализа. Карты рассыпались.";
