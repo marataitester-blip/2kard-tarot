@@ -14,12 +14,9 @@ const App: React.FC = () => {
   const [mode, setMode] = useState<'RANDOM' | 'MANUAL'>('RANDOM');
   const [appMode, setAppMode] = useState<AppMode>('RELATIONSHIPS');
   
-  // Выбор персонажа: STANDARD (Марго) или VIP (Мессир)
   const [consultant, setConsultant] = useState<ConsultantType>('STANDARD');
-  
   const [userProblem, setUserProblem] = useState('');
   
-  // Карты
   const [card1, setCard1] = useState<TarotCard | null>(null);
   const [card2, setCard2] = useState<TarotCard | null>(null);
   const [card3, setCard3] = useState<TarotCard | null>(null);
@@ -27,7 +24,10 @@ const App: React.FC = () => {
   
   const [resultText, setResultText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  // ИЗМЕНЕНИЕ 1: Добавляем состояние для URL аудио
+  const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   // --- ЛОГИКА ОТОБРАЖЕНИЯ (ВИДЕО / ФОТО) ---
   const renderCardMedia = (card: TarotCard | null) => {
@@ -52,7 +52,6 @@ const App: React.FC = () => {
     );
   };
 
-  // --- ОСНОВНАЯ ЛОГИКА ---
   const handleStart = () => {
     setCard1(null); setCard2(null); setCard3(null); setCard4(null);
     setFinanceSubStep(1);
@@ -82,6 +81,7 @@ const App: React.FC = () => {
     setStep('ANALYSIS');
     setIsLoading(true);
     setResultText(''); 
+    setAudioUrl(null); // Сбрасываем старое аудио
     
     const activeConsultant = forcedConsultant || consultant;
 
@@ -105,29 +105,30 @@ const App: React.FC = () => {
     runDiagnosis(newConsultant);
   };
 
-  const handleSpeak = async () => {
-    if (!resultText || isSpeaking) return;
-    setIsSpeaking(true);
-    const cleanText = resultText.replace(/[#*]/g, ''); 
-    const audioUrl = await speakText(cleanText, consultant, appMode);
+  // ИЗМЕНЕНИЕ 2: Логика генерации (без автозапуска)
+  const handleGenerateAudio = async () => {
+    if (!resultText || isGeneratingVoice) return;
     
-    if (audioUrl) {
-      const audio = new Audio(audioUrl);
-      audio.play();
-      audio.onended = () => setIsSpeaking(false);
-    } else {
-      setIsSpeaking(false);
+    setIsGeneratingVoice(true);
+    setAudioUrl(null); // Сброс плеера перед новой генерацией
+
+    const cleanText = resultText.replace(/[#*]/g, ''); 
+    const url = await speakText(cleanText, consultant, appMode);
+    
+    if (url) {
+      setAudioUrl(url); // Сохраняем ссылку, плеер появится сам
     }
+    
+    setIsGeneratingVoice(false);
   };
 
   const reset = () => {
     setStep('INTAKE');
     setResultText('');
     setUserProblem('');
-    setIsSpeaking(false);
+    setAudioUrl(null);
   };
 
-  // --- КОМПОНЕНТ СЛОТА КАРТЫ ---
   const CardSlot = ({ card, position, label }: { card: TarotCard | null, position: number, label: string }) => (
     <div className="flex-1 flex flex-col gap-2 min-w-[100px]">
       <span className="text-[10px] text-center text-gray-400 uppercase tracking-wider h-4">{label}</span>
@@ -209,7 +210,6 @@ const App: React.FC = () => {
             >
               <div className="text-[#D4AF37] font-bold text-sm">МАРГО</div>
               <div className="text-[10px] text-gray-400">Практик (Qwen)</div>
-              <div className="text-[10px] text-gray-500 mt-1 italic">"Я женщина земная..."</div>
             </div>
 
             <div 
@@ -220,7 +220,6 @@ const App: React.FC = () => {
               <div className="absolute top-0 right-0 bg-[#FFD700] text-black text-[9px] font-bold px-2 py-0.5 rounded-bl">VIP</div>
               <div className="text-[#FFD700] font-bold text-sm">МЕССИР</div>
               <div className="text-[10px] text-gray-300">Эстет (Claude)</div>
-              <div className="text-[10px] text-[#FFD700] mt-1 italic">"Рукописи не горят"</div>
             </div>
           </div>
 
@@ -343,17 +342,28 @@ const App: React.FC = () => {
                 {resultText}
               </div>
 
-              <button 
-                onClick={handleSpeak} 
-                disabled={isSpeaking} 
-                className={`w-full py-3 mb-4 rounded font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2
-                  ${isSpeaking 
-                    ? 'bg-gray-800 text-gray-500 cursor-wait' 
-                    : (consultant === 'VIP' ? 'bg-[#FFD700] text-black hover:bg-[#FDB931]' : 'bg-[#D4AF37] text-black hover:bg-[#b5952f]')
-                  }`}
-              >
-                 {isSpeaking ? 'Вещаю...' : '🔊 Озвучить'}
-              </button>
+              {/* ИЗМЕНЕНИЕ 3: Кнопка генерации и АУДИО ПЛЕЕР */}
+              {!audioUrl ? (
+                <button 
+                  onClick={handleGenerateAudio} 
+                  disabled={isGeneratingVoice} 
+                  className={`w-full py-3 mb-4 rounded font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2
+                    ${isGeneratingVoice 
+                      ? 'bg-gray-800 text-gray-500 cursor-wait' 
+                      : (consultant === 'VIP' ? 'bg-[#FFD700] text-black hover:bg-[#FDB931]' : 'bg-[#D4AF37] text-black hover:bg-[#b5952f]')
+                    }`}
+                >
+                   {isGeneratingVoice ? 'Создаю аудио...' : '🎙️ Создать озвучку'}
+                </button>
+              ) : (
+                <div className="mb-4 w-full animate-fade-in">
+                  <div className={`text-xs text-center mb-1 uppercase tracking-widest ${consultant === 'VIP' ? 'text-[#FFD700]' : 'text-[#D4AF37]'}`}>
+                    {consultant === 'VIP' ? 'Голос Мессира' : 'Голос Марго'}
+                  </div>
+                  {/* ВОТ ОНО - РЕШЕНИЕ ДЛЯ iPHONE: Родной плеер браузера */}
+                  <audio controls src={audioUrl} className="w-full" autoPlay />
+                </div>
+              )}
               
               <button 
                 onClick={handleSecondOpinion} 
