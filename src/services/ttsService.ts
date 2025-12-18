@@ -1,53 +1,33 @@
-const API_KEY = import.meta.env.VITE_OPENAI_KEY;
-
-// Типы голосов OpenAI: alloy, echo, fable, onyx, nova, shimmer
-// alloy - нейтральный
-// echo - мягкий мужской
-// fable - британский/ироничный (Марго в отношениях)
-// onyx - глубокий мужской (Мессир/Штирлиц)
-// nova - энергичная женская (Марго в деньгах)
-// shimmer - чистая женская
-
 export const speakText = async (
   text: string, 
   consultant: 'STANDARD' | 'VIP',
   mode: 'RELATIONSHIPS' | 'FINANCE'
 ): Promise<string | null> => {
   
-  if (!API_KEY) {
-    console.error("TTS: Нет ключа API (VITE_OPENAI_KEY)");
-    return null;
-  }
-
-  // ВЫБОР ГОЛОСА ПО ХАРАКТЕРУ
-  let voice = "alloy"; // Дефолт
+  // 1. Логика выбора голоса (оставляем как было)
+  let voice = "alloy"; 
 
   if (consultant === 'VIP') {
-    // МЕССИР (Claude) -> Глубокий, серьезный мужской
-    voice = "onyx"; 
+    voice = "onyx"; // Мессир
   } else {
-    // МАРГО (Qwen)
     if (mode === 'FINANCE') {
-      // Татьяна Мужицкая / Практик -> Энергичная женщина
-      voice = "nova"; 
+      voice = "nova"; // Марго (Деньги)
     } else {
-      // Циничный психолог -> Ироничный, нейтральный
-      voice = "fable"; 
+      voice = "fable"; // Марго (Отношения)
     }
   }
 
   try {
-    const response = await fetch("https://api.openai.com/v1/audio/speech", {
+    // 2. ИЗМЕНЕНИЕ: Обращаемся к вашему серверу /api/tts
+    // Больше не нужен API_KEY здесь, он спрятан на сервере
+    const response = await fetch("/api/tts", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "tts-1",
-        input: text,
-        voice: voice,
-        speed: 1.0, 
+        text: text,
+        voice: voice, // Передаем серверу, какой голос использовать
       }),
     });
 
@@ -56,8 +36,10 @@ export const speakText = async (
       return null;
     }
 
+    // 3. Получаем аудио и возвращаем ссылку на него
     const blob = await response.blob();
     return URL.createObjectURL(blob);
+
   } catch (error) {
     console.error("TTS Network Error:", error);
     return null;
