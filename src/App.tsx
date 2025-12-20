@@ -4,22 +4,19 @@ import { TarotCard } from './types';
 import { analyzeRelationship } from './services/geminiService';
 import { speakText } from './services/ttsService';
 
-type AppMode = 'RELATIONSHIPS' | 'FINANCE';
+// Добавили GENERAL в типы
+type AppMode = 'RELATIONSHIPS' | 'FINANCE' | 'GENERAL';
 type ConsultantType = 'STANDARD' | 'VIP';
 
 const App: React.FC = () => {
-  // --- СОСТОЯНИЕ (STATE) ---
   const [step, setStep] = useState<'INTAKE' | 'SELECTION' | 'ANALYSIS'>('INTAKE');
   const [financeSubStep, setFinanceSubStep] = useState<1 | 2>(1);
   const [mode, setMode] = useState<'RANDOM' | 'MANUAL'>('RANDOM');
   const [appMode, setAppMode] = useState<AppMode>('RELATIONSHIPS');
   
-  // Выбор персонажа
   const [consultant, setConsultant] = useState<ConsultantType>('STANDARD');
-  
   const [userProblem, setUserProblem] = useState('');
   
-  // Карты
   const [card1, setCard1] = useState<TarotCard | null>(null);
   const [card2, setCard2] = useState<TarotCard | null>(null);
   const [card3, setCard3] = useState<TarotCard | null>(null);
@@ -28,34 +25,20 @@ const App: React.FC = () => {
   const [resultText, setResultText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // АУДИО (Плеер)
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
-  // --- ЛОГИКА ОТОБРАЖЕНИЯ (ВИДЕО / ФОТО) ---
   const renderCardMedia = (card: TarotCard | null) => {
     if (!card) return null;
     const isVideo = card.imageUrl.endsWith('.mp4');
-
     if (isVideo) {
       return (
-        <video 
-          src={card.imageUrl} 
-          className="w-full h-full object-cover opacity-90"
-          autoPlay loop muted playsInline
-        />
+        <video src={card.imageUrl} className="w-full h-full object-cover opacity-90" autoPlay loop muted playsInline />
       );
     }
-    return (
-      <img 
-        src={card.imageUrl} 
-        className="w-full h-full object-cover opacity-90" 
-        alt={card.name}
-      />
-    );
+    return <img src={card.imageUrl} className="w-full h-full object-cover opacity-90" alt={card.name} />;
   };
 
-  // --- ОСНОВНАЯ ЛОГИКА ---
   const handleStart = () => {
     setCard1(null); setCard2(null); setCard3(null); setCard4(null);
     setFinanceSubStep(1);
@@ -65,8 +48,11 @@ const App: React.FC = () => {
       setCard1(shuffled[0]);
       setCard2(shuffled[1]);
       
-      if (appMode === 'FINANCE') {
+      // Для Судьбы нужно 3 карты, для Финансов 4
+      if (appMode === 'GENERAL' || appMode === 'FINANCE') {
         setCard3(shuffled[2]);
+      }
+      if (appMode === 'FINANCE') {
         setCard4(shuffled[3]);
       }
     }
@@ -85,14 +71,15 @@ const App: React.FC = () => {
     setStep('ANALYSIS');
     setIsLoading(true);
     setResultText(''); 
-    setAudioUrl(null); // Сбрасываем старый звук
+    setAudioUrl(null);
     
     const activeConsultant = forcedConsultant || consultant;
 
     try {
-      const cardsToSend = appMode === 'RELATIONSHIPS' 
-        ? [card1!, card2!] 
-        : [card1!, card2!, card3!, card4!];
+      let cardsToSend: TarotCard[] = [];
+      if (appMode === 'RELATIONSHIPS') cardsToSend = [card1!, card2!];
+      else if (appMode === 'GENERAL') cardsToSend = [card1!, card2!, card3!];
+      else cardsToSend = [card1!, card2!, card3!, card4!];
 
       const text = await analyzeRelationship(cardsToSend, userProblem, appMode, activeConsultant);
       setResultText(text);
@@ -109,21 +96,13 @@ const App: React.FC = () => {
     runDiagnosis(newConsultant);
   };
 
-  // ЛОГИКА ГЕНЕРАЦИИ ЗВУКА
   const handleGenerateAudio = async () => {
     if (!resultText || isGeneratingVoice) return;
-    
     setIsGeneratingVoice(true);
     setAudioUrl(null); 
-
-    // Убираем звездочки и решетки из текста перед озвучкой
     const cleanText = resultText.replace(/[#*]/g, ''); 
-    const url = await speakText(cleanText, consultant, appMode);
-    
-    if (url) {
-      setAudioUrl(url);
-    }
-    
+    const url = await speakText(cleanText, consultant, appMode as any); // as any для совместимости типов
+    if (url) setAudioUrl(url);
     setIsGeneratingVoice(false);
   };
 
@@ -134,10 +113,9 @@ const App: React.FC = () => {
     setAudioUrl(null);
   };
 
-  // --- КОМПОНЕНТ СЛОТА КАРТЫ ---
   const CardSlot = ({ card, position, label }: { card: TarotCard | null, position: number, label: string }) => (
-    <div className="flex-1 flex flex-col gap-2 min-w-[100px]">
-      <span className="text-[10px] text-center text-gray-400 uppercase tracking-wider h-4">{label}</span>
+    <div className="flex-1 flex flex-col gap-2 min-w-[90px]">
+      <span className="text-[10px] text-center text-gray-400 uppercase tracking-wider h-8 flex items-center justify-center leading-tight">{label}</span>
       {mode === 'RANDOM' ? (
         <div className={`aspect-[2/3] bg-black border rounded overflow-hidden relative shadow-lg transition-all duration-500
           ${consultant === 'VIP' 
@@ -163,22 +141,26 @@ const App: React.FC = () => {
     </div>
   );
 
+  // Определение заголовка режима
+  const getModeTitle = () => {
+    if (appMode === 'RELATIONSHIPS') return 'Astra Hero';
+    if (appMode === 'FINANCE') return 'Money Shark';
+    return 'Fate Walker'; // Название для режима Судьбы
+  };
+
   return (
     <div className="min-h-screen bg-[#050505] text-[#E0E0E0] font-serif flex flex-col items-center p-4">
       
-      {/* HEADER */}
       <header className="mb-6 mt-4 text-center animate-fade-in">
         <h1 className={`text-4xl font-bold tracking-widest uppercase font-cinzel drop-shadow-md transition-all duration-500
           ${consultant === 'VIP' 
             ? 'text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#FFA500]' 
             : 'text-[#D4AF37]'
           }`}>
-          {appMode === 'RELATIONSHIPS' ? 'Astra Hero' : 'Money Shark'}
+          {getModeTitle()}
         </h1>
         <p className="text-xs text-gray-500 uppercase tracking-widest mt-2 transition-all duration-500">
-          {consultant === 'VIP' 
-            ? '✨ Аудиенция у Мессира ✨' 
-            : (appMode === 'RELATIONSHIPS' ? 'Приемная Марго' : 'Бухгалтерия Марго')}
+          {consultant === 'VIP' ? '✨ Аудиенция у Мессира ✨' : 'Кабинет Марго'}
         </p>
       </header>
 
@@ -187,16 +169,13 @@ const App: React.FC = () => {
         <div className="w-full max-w-md flex flex-col gap-6 animate-fade-in">
           
           <div className="flex bg-[#111] p-1 rounded-lg border border-[#333]">
-            <button 
-              onClick={() => setAppMode('RELATIONSHIPS')}
-              className={`flex-1 py-2 text-xs uppercase font-bold rounded transition-all ${appMode === 'RELATIONSHIPS' ? 'bg-[#D4AF37] text-black' : 'text-gray-500 hover:text-white'}`}
-            >
+            <button onClick={() => setAppMode('RELATIONSHIPS')} className={`flex-1 py-2 text-[10px] sm:text-xs uppercase font-bold rounded transition-all ${appMode === 'RELATIONSHIPS' ? 'bg-[#D4AF37] text-black' : 'text-gray-500 hover:text-white'}`}>
               ❤️ Отношения
             </button>
-            <button 
-              onClick={() => setAppMode('FINANCE')}
-              className={`flex-1 py-2 text-xs uppercase font-bold rounded transition-all ${appMode === 'FINANCE' ? 'bg-[#D4AF37] text-black' : 'text-gray-500 hover:text-white'}`}
-            >
+            <button onClick={() => setAppMode('GENERAL')} className={`flex-1 py-2 text-[10px] sm:text-xs uppercase font-bold rounded transition-all ${appMode === 'GENERAL' ? 'bg-[#D4AF37] text-black' : 'text-gray-500 hover:text-white'}`}>
+              🔮 Судьба
+            </button>
+            <button onClick={() => setAppMode('FINANCE')} className={`flex-1 py-2 text-[10px] sm:text-xs uppercase font-bold rounded transition-all ${appMode === 'FINANCE' ? 'bg-[#D4AF37] text-black' : 'text-gray-500 hover:text-white'}`}>
               💸 Деньги
             </button>
           </div>
@@ -204,25 +183,21 @@ const App: React.FC = () => {
           <textarea 
             value={userProblem}
             onChange={(e) => setUserProblem(e.target.value)}
-            placeholder={appMode === 'RELATIONSHIPS' ? "В чем драма, мой друг?" : "Где деньги, Марго?"}
+            placeholder={
+              appMode === 'RELATIONSHIPS' ? "В чем драма, мой друг?" : 
+              appMode === 'FINANCE' ? "Где деньги, Марго?" :
+              "Что тревожит твою душу?"
+            }
             className="w-full h-24 bg-[#111] border border-[#333] rounded-lg p-4 text-gray-300 focus:border-[#D4AF37] focus:outline-none resize-none placeholder-gray-600"
           />
 
+          {/* Выбор консультанта */}
           <div className="grid grid-cols-2 gap-4">
-            <div 
-              onClick={() => setConsultant('STANDARD')}
-              className={`border rounded-lg p-3 cursor-pointer transition-all flex flex-col gap-1 relative 
-                ${consultant === 'STANDARD' ? 'border-[#D4AF37] bg-[#D4AF37]/10' : 'border-[#333] opacity-60 hover:opacity-100'}`}
-            >
+            <div onClick={() => setConsultant('STANDARD')} className={`border rounded-lg p-3 cursor-pointer transition-all flex flex-col gap-1 relative ${consultant === 'STANDARD' ? 'border-[#D4AF37] bg-[#D4AF37]/10' : 'border-[#333] opacity-60 hover:opacity-100'}`}>
               <div className="text-[#D4AF37] font-bold text-sm">МАРГО</div>
               <div className="text-[10px] text-gray-400">Практик (Qwen)</div>
             </div>
-
-            <div 
-              onClick={() => setConsultant('VIP')}
-              className={`border rounded-lg p-3 cursor-pointer transition-all flex flex-col gap-1 relative overflow-hidden 
-                ${consultant === 'VIP' ? 'border-[#FFD700] bg-gradient-to-br from-[#FFD700]/10 to-black' : 'border-[#333] opacity-60 hover:opacity-100'}`}
-            >
+            <div onClick={() => setConsultant('VIP')} className={`border rounded-lg p-3 cursor-pointer transition-all flex flex-col gap-1 relative overflow-hidden ${consultant === 'VIP' ? 'border-[#FFD700] bg-gradient-to-br from-[#FFD700]/10 to-black' : 'border-[#333] opacity-60 hover:opacity-100'}`}>
               <div className="absolute top-0 right-0 bg-[#FFD700] text-black text-[9px] font-bold px-2 py-0.5 rounded-bl">VIP</div>
               <div className="text-[#FFD700] font-bold text-sm">МЕССИР</div>
               <div className="text-[10px] text-gray-300">Эстет (Claude)</div>
@@ -238,15 +213,7 @@ const App: React.FC = () => {
             </button>
           </div>
 
-          <button 
-            onClick={handleStart} 
-            disabled={!userProblem.trim()} 
-            className={`w-full py-4 mt-2 font-bold uppercase tracking-widest rounded shadow-lg transition-all duration-500
-              ${consultant === 'VIP' 
-                ? 'bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#FFA500] text-black hover:shadow-[#FFD700]/30' 
-                : 'bg-[#D4AF37] text-black hover:bg-[#b5952f] hover:shadow-[#D4AF37]/30'
-              } disabled:opacity-50 disabled:shadow-none`}
-          >
+          <button onClick={handleStart} disabled={!userProblem.trim()} className={`w-full py-4 mt-2 font-bold uppercase tracking-widest rounded shadow-lg transition-all duration-500 ${consultant === 'VIP' ? 'bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#FFA500] text-black hover:shadow-[#FFD700]/30' : 'bg-[#D4AF37] text-black hover:bg-[#b5952f] hover:shadow-[#D4AF37]/30'} disabled:opacity-50 disabled:shadow-none`}>
             {consultant === 'VIP' ? 'Начать Аудиенцию' : 'Начать Сеанс'}
           </button>
         </div>
@@ -255,22 +222,36 @@ const App: React.FC = () => {
       {/* --- ШАГ 2: ВЫБОР КАРТ --- */}
       {step === 'SELECTION' && (
         <div className="w-full max-w-md flex flex-col gap-6 animate-fade-in">
-          {appMode === 'RELATIONSHIPS' ? (
+          
+          {/* ОТНОШЕНИЯ (2 карты) */}
+          {appMode === 'RELATIONSHIPS' && (
             <>
               <div className="flex justify-center gap-4">
                 <CardSlot card={card1} position={1} label="ОН / Мысли" />
                 <CardSlot card={card2} position={2} label="ОНА / Чувства" />
               </div>
-              <button 
-                onClick={() => runDiagnosis()} 
-                disabled={!card1 || !card2} 
-                className={`w-full py-4 mt-8 border font-bold uppercase tracking-widest rounded transition-all hover:bg-opacity-10
-                  ${consultant === 'VIP' ? 'border-[#FFD700] text-[#FFD700] hover:bg-[#FFD700]' : 'border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]'}`}
-              >
+              <button onClick={() => runDiagnosis()} disabled={!card1 || !card2} className={`w-full py-4 mt-8 border font-bold uppercase tracking-widest rounded transition-all hover:bg-opacity-10 ${consultant === 'VIP' ? 'border-[#FFD700] text-[#FFD700] hover:bg-[#FFD700]' : 'border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]'}`}>
                 Узнать Истину
               </button>
             </>
-          ) : (
+          )}
+
+          {/* СУДЬБА (3 карты) - НОВЫЙ БЛОК */}
+          {appMode === 'GENERAL' && (
+            <>
+              <div className="flex justify-center gap-2">
+                <CardSlot card={card1} position={1} label="Ситуация" />
+                <CardSlot card={card2} position={2} label="Действие" />
+                <CardSlot card={card3} position={3} label="Результат" />
+              </div>
+              <button onClick={() => runDiagnosis()} disabled={!card1 || !card2 || !card3} className={`w-full py-4 mt-8 border font-bold uppercase tracking-widest rounded transition-all hover:bg-opacity-10 ${consultant === 'VIP' ? 'border-[#FFD700] text-[#FFD700] hover:bg-[#FFD700]' : 'border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]'}`}>
+                Раскрыть Судьбу
+              </button>
+            </>
+          )}
+
+          {/* ФИНАНСЫ (4 карты) */}
+          {appMode === 'FINANCE' && (
             <>
               {financeSubStep === 1 ? (
                 <div className="flex flex-col gap-4">
@@ -279,11 +260,7 @@ const App: React.FC = () => {
                     <CardSlot card={card1} position={1} label="АКТИВ (Ты)" />
                     <CardSlot card={card2} position={2} label="ПОТОК (Кэш)" />
                   </div>
-                  <button 
-                    onClick={() => setFinanceSubStep(2)} 
-                    disabled={!card1 || !card2} 
-                    className="w-full py-3 mt-4 bg-[#222] text-white border border-[#444] rounded hover:border-[#D4AF37] transition-colors"
-                  >
+                  <button onClick={() => setFinanceSubStep(2)} disabled={!card1 || !card2} className="w-full py-3 mt-4 bg-[#222] text-white border border-[#444] rounded hover:border-[#D4AF37] transition-colors">
                     Далее: Стратегия ▼
                   </button>
                 </div>
@@ -296,12 +273,7 @@ const App: React.FC = () => {
                   </div>
                   <div className="flex gap-2 mt-4">
                     <button onClick={() => setFinanceSubStep(1)} className="px-4 py-3 bg-[#111] border border-[#333] rounded text-gray-400 hover:text-white">◀</button>
-                    <button 
-                      onClick={() => runDiagnosis()} 
-                      disabled={!card3 || !card4} 
-                      className={`flex-1 py-3 border font-bold uppercase tracking-widest rounded hover:bg-opacity-10 transition-all
-                        ${consultant === 'VIP' ? 'border-[#FFD700] text-[#FFD700] hover:bg-[#FFD700]' : 'border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]'}`}
-                    >
+                    <button onClick={() => runDiagnosis()} disabled={!card3 || !card4} className={`flex-1 py-3 border font-bold uppercase tracking-widest rounded hover:bg-opacity-10 transition-all ${consultant === 'VIP' ? 'border-[#FFD700] text-[#FFD700] hover:bg-[#FFD700]' : 'border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]'}`}>
                       {consultant === 'VIP' ? 'Вердикт Мессира' : 'Жесткий Разбор'}
                     </button>
                   </div>
@@ -318,80 +290,61 @@ const App: React.FC = () => {
           
           {isLoading ? (
             <div className="text-center mt-20">
-              <div className={`w-16 h-16 border-t-2 border-r-2 rounded-full animate-spin mx-auto mb-4 
-                ${consultant === 'VIP' ? 'border-[#FFD700]' : 'border-[#D4AF37]'}`}></div>
+              <div className={`w-16 h-16 border-t-2 border-r-2 rounded-full animate-spin mx-auto mb-4 ${consultant === 'VIP' ? 'border-[#FFD700]' : 'border-[#D4AF37]'}`}></div>
               <p className={`animate-pulse ${consultant === 'VIP' ? 'text-[#FFD700]' : 'text-[#D4AF37]'}`}>
                 {consultant === 'VIP' ? 'Мессир размышляет...' : 'Марго считает убытки...'}
               </p>
             </div>
           ) : (
-            <div className={`w-full bg-[#0a0a0a] border p-6 rounded-lg shadow-2xl relative transition-colors duration-500
-              ${consultant === 'VIP' ? 'border-[#FFD700]/50 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'border-[#333] shadow-lg'}`}>
+            <div className={`w-full bg-[#0a0a0a] border p-6 rounded-lg shadow-2xl relative transition-colors duration-500 ${consultant === 'VIP' ? 'border-[#FFD700]/50 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'border-[#333] shadow-lg'}`}>
               
-              {/* 1. КАРТЫ */}
               <div className="mb-6 border-b border-[#222] pb-6 flex justify-center gap-2">
-                {appMode === 'RELATIONSHIPS' ? (
+                {appMode === 'RELATIONSHIPS' && (
                    <>
                      <div className="w-20 aspect-[2/3]">{renderCardMedia(card1)}</div>
                      <div className="w-20 aspect-[2/3]">{renderCardMedia(card2)}</div>
                    </>
-                ) : (
+                )}
+                {appMode === 'GENERAL' && (
                    <>
                      <div className="w-16 aspect-[2/3]">{renderCardMedia(card1)}</div>
                      <div className="w-16 aspect-[2/3]">{renderCardMedia(card2)}</div>
                      <div className="w-16 aspect-[2/3]">{renderCardMedia(card3)}</div>
-                     <div className="w-16 aspect-[2/3]">{renderCardMedia(card4)}</div>
+                   </>
+                )}
+                {appMode === 'FINANCE' && (
+                   <>
+                     <div className="w-14 aspect-[2/3]">{renderCardMedia(card1)}</div>
+                     <div className="w-14 aspect-[2/3]">{renderCardMedia(card2)}</div>
+                     <div className="w-14 aspect-[2/3]">{renderCardMedia(card3)}</div>
+                     <div className="w-14 aspect-[2/3]">{renderCardMedia(card4)}</div>
                    </>
                 )}
               </div>
 
-              {/* 2. ПЛЕЕР (ТЕПЕРЬ ТУТ, НАД ТЕКСТОМ) */}
+              {/* ПЛЕЕР */}
               <div className="mb-6">
                 {!audioUrl ? (
-                  <button 
-                    onClick={handleGenerateAudio} 
-                    disabled={isGeneratingVoice} 
-                    className={`w-full py-2 rounded border border-dashed text-xs uppercase font-bold tracking-widest transition-all flex items-center justify-center gap-2
-                      ${isGeneratingVoice 
-                        ? 'border-gray-700 text-gray-500 cursor-wait' 
-                        : (consultant === 'VIP' 
-                            ? 'border-[#FFD700]/50 text-[#FFD700] hover:bg-[#FFD700]/10' 
-                            : 'border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10')
-                      }`}
-                  >
+                  <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className={`w-full py-2 rounded border border-dashed text-xs uppercase font-bold tracking-widest transition-all flex items-center justify-center gap-2 ${isGeneratingVoice ? 'border-gray-700 text-gray-500 cursor-wait' : (consultant === 'VIP' ? 'border-[#FFD700]/50 text-[#FFD700] hover:bg-[#FFD700]/10' : 'border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10')}`}>
                      {isGeneratingVoice ? '✨ Магия голоса...' : '🎙️ Озвучить ответ'}
                   </button>
                 ) : (
-                  <div className={`rounded-lg p-2 border animate-fade-in flex flex-col items-center gap-2
-                    ${consultant === 'VIP' ? 'border-[#FFD700]/30 bg-[#FFD700]/5' : 'border-[#D4AF37]/30 bg-[#D4AF37]/5'}`}>
-                    
+                  <div className={`rounded-lg p-2 border animate-fade-in flex flex-col items-center gap-2 ${consultant === 'VIP' ? 'border-[#FFD700]/30 bg-[#FFD700]/5' : 'border-[#D4AF37]/30 bg-[#D4AF37]/5'}`}>
                     <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest opacity-70">
                       <span>{consultant === 'VIP' ? '🦁 Голос Мессира' : '🦊 Голос Марго'}</span>
                     </div>
-                    
-                    {/* Стандартный плеер, но аккуратный */}
                     <audio controls src={audioUrl} className="w-full h-8 opacity-80 hover:opacity-100 transition-opacity" autoPlay />
                   </div>
                 )}
               </div>
 
-              {/* 3. ТЕКСТ (ТЕПЕРЬ ПОД ПЛЕЕРОМ) */}
               <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-300 font-sans mb-8 pl-2 border-l-2 border-[#222]">
                 {resultText}
               </div>
               
-              {/* КНОПКИ ВНИЗУ */}
-              <button 
-                onClick={handleSecondOpinion} 
-                className={`w-full py-3 mb-4 rounded border text-xs uppercase font-bold tracking-widest transition-all flex items-center justify-center gap-2
-                  ${consultant === 'STANDARD' 
-                    ? 'border-[#FFD700] text-[#FFD700] hover:bg-[#FFD700]/10' 
-                    : 'border-gray-500 text-gray-400 hover:bg-white/5' 
-                  }`}
-              >
+              <button onClick={handleSecondOpinion} className={`w-full py-3 mb-4 rounded border text-xs uppercase font-bold tracking-widest transition-all flex items-center justify-center gap-2 ${consultant === 'STANDARD' ? 'border-[#FFD700] text-[#FFD700] hover:bg-[#FFD700]/10' : 'border-gray-500 text-gray-400 hover:bg-white/5'}`}>
                 {consultant === 'STANDARD' ? '🎩 Узнать мнение Мессира (VIP)' : '💃 Послушать Марго (Standard)'}
               </button>
-
               <button onClick={reset} className="w-full py-3 text-xs uppercase tracking-widest text-gray-500 hover:text-white border-t border-transparent hover:border-gray-800 transition-colors">
                 Новый Гость
               </button>
