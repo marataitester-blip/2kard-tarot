@@ -1,111 +1,201 @@
 import { TarotCard } from '../types';
 
-// ДОБАВИЛ "@main" — это важно для мгновенного обновления картинок с GitHub!
-const BASE_URL = "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot@main";
-
-export const cardBackUrl = `${BASE_URL}/rubashka.png`; 
-
 export const cards: TarotCard[] = [
-  // =====================================================================
-  // СТАРШИЕ АРКАНЫ (24 карты: 0-21 + Герой + Белая)
-  // Имена файлов строго по твоему списку: 00_fool.png, 01_magician.png...
-  // =====================================================================
-  { id: 'major0', name: 'Шут (Дурак)', type: 'major', imageUrl: `${BASE_URL}/00_fool.png`, desc_general: 'Начало пути, свобода, хаос, риск, слепая вера.' },
-  { id: 'major1', name: 'Маг', type: 'major', imageUrl: `${BASE_URL}/01_magician.png`, desc_general: 'Воля, мастерство, манипуляция, действие, "Я могу".' },
-  { id: 'major2', name: 'Верховная Жрица', type: 'major', imageUrl: `${BASE_URL}/02_high_priestess.png`, desc_general: 'Интуиция, тайное знание, пассивность, молчание.' },
-  { id: 'major3', name: 'Императрица', type: 'major', imageUrl: `${BASE_URL}/03_empress.png`, desc_general: 'Плодородие, женственность, природа, забота, изобилие.' },
-  { id: 'major4', name: 'Император', type: 'major', imageUrl: `${BASE_URL}/04_emperor.png`, desc_general: 'Власть, структура, контроль, отец, порядок.' },
-  { id: 'major5', name: 'Иерофант (Жрец)', type: 'major', imageUrl: `${BASE_URL}/05_hierophant.png`, desc_general: 'Традиции, обучение, мораль, брак, наставничество.' },
-  { id: 'major6', name: 'Влюбленные', type: 'major', imageUrl: `${BASE_URL}/06_lovers.png`, desc_general: 'Выбор, партнерство, любовь, искушение, союз.' },
-  { id: 'major7', name: 'Колесница', type: 'major', imageUrl: `${BASE_URL}/07_chariot.png`, desc_general: 'Движение, победа, контроль над эмоциями, амбиции.' },
-  { id: 'major8', name: 'Справедливость', type: 'major', imageUrl: `${BASE_URL}/08_justice.png`, desc_general: 'Баланс, карма, закон, ответственность, холодный рассудок.' },
-  { id: 'major9', name: 'Отшельник', type: 'major', imageUrl: `${BASE_URL}/09_hermit.png`, desc_general: 'Уединение, поиск истины, мудрость, самоанализ.' },
-  { id: 'major10', name: 'Колесо Фортуны', type: 'major', imageUrl: `${BASE_URL}/10_wheel_of_fortune.png`, desc_general: 'Судьба, перемены, циклы, удача/неудача, карма.' },
-  { id: 'major11', name: 'Сила', type: 'major', imageUrl: `${BASE_URL}/11_strength.png`, desc_general: 'Внутренняя сила, терпение, сострадание, укрощение инстинктов.' },
-  { id: 'major12', name: 'Повешенный', type: 'major', imageUrl: `${BASE_URL}/12_hanged_man.png`, desc_general: 'Жертва, пауза, иной взгляд на мир, зависание.' },
-  { id: 'major13', name: 'Смерть', type: 'major', imageUrl: `${BASE_URL}/13_death.png`, desc_general: 'Трансформация, конец старого, необратимые перемены.' },
-  { id: 'major14', name: 'Умеренность', type: 'major', imageUrl: `${BASE_URL}/14_temperance.png`, desc_general: 'Баланс, исцеление, терпение, компромисс, алхимия.' },
-  { id: 'major15', name: 'Дьявол', type: 'major', imageUrl: `${BASE_URL}/15_devil.png`, desc_general: 'Зависимость, тень, материализм, сексуальность, страхи.' },
-  { id: 'major16', name: 'Башня', type: 'major', imageUrl: `${BASE_URL}/16_tower.png`, desc_general: 'Катастрофа, разрушение иллюзий, внезапные перемены.' },
-  { id: 'major17', name: 'Звезда', type: 'major', imageUrl: `${BASE_URL}/17_star.png`, desc_general: 'Надежда, вдохновение, исцеление, вера в будущее.' },
-  { id: 'major18', name: 'Луна', type: 'major', imageUrl: `${BASE_URL}/18_moon.png`, desc_general: 'Иллюзии, страхи, подсознание, обман, неясность.' },
-  { id: 'major19', name: 'Солнце', type: 'major', imageUrl: `${BASE_URL}/19_sun.png`, desc_general: 'Радость, успех, ясность, энергия, оптимизм.' },
-  { id: 'major20', name: 'Суд', type: 'major', imageUrl: `${BASE_URL}/20_judgement.png`, desc_general: 'Возрождение, призыв, кармический итог, пробуждение.' },
-  { id: 'major21', name: 'Мир', type: 'major', imageUrl: `${BASE_URL}/21_world.png`, desc_general: 'Завершение цикла, гармония, целостность, триумф.' },
-  
-  // СПЕЦИАЛЬНЫЕ КАРТЫ (Твои уникальные файлы)
-  { id: 'major22', name: 'ГЕРОЙ (Astra Hero)', type: 'major', imageUrl: `${BASE_URL}/22_hero.png`, desc_general: 'Преодоление, выход за рамки, ты сам творишь судьбу, новый уровень.' },
-  { id: 'major23', name: 'Белая Карта', type: 'major', imageUrl: `${BASE_URL}/23_white_card.png`, desc_general: 'Неизвестность, высшие силы молчат, карт-бланш, тайна.' },
+  // --- СТАРШИЕ АРКАНЫ ---
+  {
+    id: 'major_0',
+    name: 'Шут',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/00_fool.png',
+    meaning: 'Начало пути, свобода, невинность, риск'
+  },
+  {
+    id: 'major_1',
+    name: 'Маг',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/01_magician.png',
+    meaning: 'Воля, мастерство, созидание, проявление'
+  },
+  {
+    id: 'major_2',
+    name: 'Жрица',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/02_high_priestess.png',
+    meaning: 'Интуиция, тайна, подсознание, мудрость'
+  },
+  {
+    id: 'major_3',
+    name: 'Императрица',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/03_empress.png',
+    meaning: 'Плодородие, изобилие, природа, забота'
+  },
+  {
+    id: 'major_4',
+    name: 'Император',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/04_emperor.png',
+    meaning: 'Власть, структура, контроль, отцовство'
+  },
+  {
+    id: 'major_5',
+    name: 'Иерофант',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/05_hierophant.png',
+    meaning: 'Традиция, обучение, духовность, вера'
+  },
+  {
+    id: 'major_6',
+    name: 'Влюбленные',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/06_lovers.png',
+    meaning: 'Любовь, выбор, гармония, союз'
+  },
+  {
+    id: 'major_7',
+    name: 'Колесница',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/07_chariot.png',
+    meaning: 'Победа, движение, решимость, самоконтроль'
+  },
+  {
+    id: 'major_8',
+    name: 'Справедливость',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/08_justice.png',
+    meaning: 'Карма, правда, закон, равновесие'
+  },
+  {
+    id: 'major_9',
+    name: 'Отшельник',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/09_hermit.png',
+    meaning: 'Поиск истины, одиночество, мудрость, самоанализ'
+  },
+  {
+    id: 'major_10',
+    name: 'Колесо Фортуны',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/10_wheel_of_fortune.png',
+    meaning: 'Судьба, перемены, циклы, удача'
+  },
+  {
+    id: 'major_11',
+    name: 'Сила',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/11_strength.png',
+    meaning: 'Смелость, сострадание, внутренняя сила, терпение'
+  },
+  {
+    id: 'major_12',
+    name: 'Повешенный',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/12_hanged_man.png',
+    meaning: 'Жертва, пауза, новый взгляд, зависание'
+  },
+  {
+    id: 'major_13',
+    name: 'Смерть',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/13_death.png',
+    meaning: 'Трансформация, конец, начало нового, переход'
+  },
+  {
+    id: 'major_14',
+    name: 'Умеренность',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/14_temperance.png',
+    meaning: 'Баланс, исцеление, терпение, алхимия'
+  },
+  {
+    id: 'major_15',
+    name: 'Дьявол',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/15_devil.png',
+    meaning: 'Зависимость, искушение, материализм, тень'
+  },
+  {
+    id: 'major_16',
+    name: 'Башня',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/16_tower.png',
+    meaning: 'Разрушение, катастрофа, прозрение, освобождение'
+  },
+  {
+    id: 'major_17',
+    name: 'Звезда',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/17_star.png',
+    meaning: 'Надежда, вдохновение, духовность, обновление'
+  },
+  {
+    id: 'major_18',
+    name: 'Луна',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/18_moon.png',
+    meaning: 'Иллюзии, страхи, подсознание, сны'
+  },
+  {
+    id: 'major_19',
+    name: 'Солнце',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/19_sun.png',
+    meaning: 'Радость, успех, витальность, ясность'
+  },
+  {
+    id: 'major_20',
+    name: 'Страшный Суд',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/20_judgement.png',
+    meaning: 'Возрождение, призыв, прощение, итог'
+  },
+  {
+    id: 'major_21',
+    name: 'Мир',
+    imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/21_world.png',
+    meaning: 'Завершение, целостность, путешествие, триумф'
+  },
 
-  // =====================================================================
-  // ЖЕЗЛЫ (14 карт)
-  // =====================================================================
-  { id: 'wands01', name: 'Туз Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_01_ace.png`, desc_general: 'Импульс, начало, вдохновение, страсть.' },
-  { id: 'wands02', name: 'Двойка Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_02_two.png`, desc_general: 'Планирование, выбор пути, оценка перспектив.' },
-  { id: 'wands03', name: 'Тройка Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_03_three.png`, desc_general: 'Расширение горизонтов, первый успех, ожидание.' },
-  { id: 'wands04', name: 'Четверка Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_04_four.png`, desc_general: 'Праздник, дом, стабильность, гармония.' },
-  { id: 'wands05', name: 'Пятерка Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_05_five.png`, desc_general: 'Конфликт, конкуренция, борьба, споры.' },
-  { id: 'wands06', name: 'Шестерка Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_06_six.png`, desc_general: 'Победа, триумф, признание, гордость.' },
-  { id: 'wands07', name: 'Семерка Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_07_seven.png`, desc_general: 'Защита, отстаивание позиции, стойкость.' },
-  { id: 'wands08', name: 'Восьмерка Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_08_eight.png`, desc_general: 'Скорость, новости, быстрое развитие событий.' },
-  { id: 'wands09', name: 'Девятка Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_09_nine.png`, desc_general: 'Усталость, оборона, подозрительность, опыт.' },
-  { id: 'wands10', name: 'Десятка Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_10_ten.png`, desc_general: 'Бремя, перегрузка, ответственность, тяжелый труд.' },
-  { id: 'wands11', name: 'Паж Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_11_page.png`, desc_general: 'Энтузиаст, вестник, любопытство, новая идея.' },
-  { id: 'wands12', name: 'Рыцарь Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_12_knight.png`, desc_general: 'Действие, страсть, приключение, импульсивность.' },
-  { id: 'wands13', name: 'Королева Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_13_queen.png`, desc_general: 'Харизма, уверенность, страсть, независимость.' },
-  { id: 'wands14', name: 'Король Жезлов', type: 'minor', imageUrl: `${BASE_URL}/wands_14_king.png`, desc_general: 'Лидер, визионер, харизма, предприниматель.' },
+  // --- ЖЕЗЛЫ (WANDS) ---
+  { id: 'wands_1', name: 'Туз Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_01_ace.png', meaning: 'Вдохновение, новый старт, энергия' },
+  { id: 'wands_2', name: 'Двойка Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_02_two.png', meaning: 'Планирование, выбор пути, прогресс' },
+  { id: 'wands_3', name: 'Тройка Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_03_three.png', meaning: 'Расширение, дальновидность, первые плоды' },
+  { id: 'wands_4', name: 'Четверка Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_04_four.png', meaning: 'Праздник, дом, стабильность, радость' },
+  { id: 'wands_5', name: 'Пятерка Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_05_five.png', meaning: 'Конфликт, соревнование, борьба' },
+  { id: 'wands_6', name: 'Шестерка Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_06_six.png', meaning: 'Победа, признание, успех' },
+  { id: 'wands_7', name: 'Семерка Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_07_seven.png', meaning: 'Защита, стойкость, вызов' },
+  { id: 'wands_8', name: 'Восьмерка Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_08_eight.png', meaning: 'Скорость, новости, движение' },
+  { id: 'wands_9', name: 'Девятка Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_09_nine.png', meaning: 'Усталость, оборона, настойчивость' },
+  { id: 'wands_10', name: 'Десятка Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_10_ten.png', meaning: 'Бремя, ответственность, тяжесть' },
+  { id: 'wands_11', name: 'Паж Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_11_page.png', meaning: 'Энтузиазм, исследование, новая идея' },
+  { id: 'wands_12', name: 'Рыцарь Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_12_knight.png', meaning: 'Действие, страсть, импульсивность' },
+  { id: 'wands_13', name: 'Королева Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_13_queen.png', meaning: 'Харизма, уверенность, независимость' },
+  { id: 'wands_14', name: 'Король Жезлов', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/wands_14_king.png', meaning: 'Лидерство, видение, предпринимательство' },
 
-  // =====================================================================
-  // КУБКИ (14 карт)
-  // =====================================================================
-  { id: 'cups01', name: 'Туз Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_01_ace.png`, desc_general: 'Начало любви, переполнение чувствами, шанс.' },
-  { id: 'cups02', name: 'Двойка Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_02_two.png`, desc_general: 'Партнерство, влечение, родство душ, встреча.' },
-  { id: 'cups03', name: 'Тройка Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_03_three.png`, desc_general: 'Праздник, дружба, радость, веселье.' },
-  { id: 'cups04', name: 'Четверка Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_04_four.png`, desc_general: 'Апатия, скука, пресыщение, упущенные шансы.' },
-  { id: 'cups05', name: 'Пятерка Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_05_five.png`, desc_general: 'Потеря, горе, разочарование, слезы.' },
-  { id: 'cups06', name: 'Шестерка Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_06_six.png`, desc_general: 'Ностальгия, прошлое, детство, старые связи.' },
-  { id: 'cups07', name: 'Семерка Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_07_seven.png`, desc_general: 'Иллюзии, мечты, выбор из множества вариантов.' },
-  { id: 'cups08', name: 'Восьмерка Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_08_eight.png`, desc_general: 'Уход, отказ от прошлого, поиск смысла.' },
-  { id: 'cups09', name: 'Девятка Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_09_nine.png`, desc_general: 'Удовлетворение, исполнение желаний, комфорт.' },
-  { id: 'cups10', name: 'Десятка Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_10_ten.png`, desc_general: 'Счастье в семье, гармония, идеальный брак.' },
-  { id: 'cups11', name: 'Паж Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_11_page.png`, desc_general: 'Вестник любви, нежность, творчество.' },
-  { id: 'cups12', name: 'Рыцарь Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_12_knight.png`, desc_general: 'Романтик, любовник, предложение, идеализм.' },
-  { id: 'cups13', name: 'Королева Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_13_queen.png`, desc_general: 'Эмпатия, интуиция, забота, чувствительность.' },
-  { id: 'cups14', name: 'Король Кубков', type: 'minor', imageUrl: `${BASE_URL}/cups_14_king.png`, desc_general: 'Эмоциональный баланс, дипломатия, мудрость.' },
+  // --- КУБКИ (CUPS) ---
+  { id: 'cups_1', name: 'Туз Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_01_ace.png', meaning: 'Любовь, новые чувства, интуиция' },
+  { id: 'cups_2', name: 'Двойка Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_02_two.png', meaning: 'Союз, партнерство, притяжение' },
+  { id: 'cups_3', name: 'Тройка Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_03_three.png', meaning: 'Дружба, сообщество, праздник' },
+  { id: 'cups_4', name: 'Четверка Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_04_four.png', meaning: 'Апатия, скука, упущенный шанс' },
+  { id: 'cups_5', name: 'Пятерка Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_05_five.png', meaning: 'Потеря, горе, разочарование' },
+  { id: 'cups_6', name: 'Шестерка Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_06_six.png', meaning: 'Ностальгия, прошлое, детство' },
+  { id: 'cups_7', name: 'Семерка Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_07_seven.png', meaning: 'Иллюзии, выбор, мечты' },
+  { id: 'cups_8', name: 'Восьмерка Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_08_eight.png', meaning: 'Уход, поиск смысла, отказ' },
+  { id: 'cups_9', name: 'Девятка Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_09_nine.png', meaning: 'Удовлетворение, исполнение желаний' },
+  { id: 'cups_10', name: 'Десятка Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_10_ten.png', meaning: 'Счастье, семья, гармония' },
+  { id: 'cups_11', name: 'Паж Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_11_page.png', meaning: 'Послание, творчество, начало чувств' },
+  { id: 'cups_12', name: 'Рыцарь Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_12_knight.png', meaning: 'Романтика, предложение, идеализм' },
+  { id: 'cups_13', name: 'Королева Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_13_queen.png', meaning: 'Эмпатия, забота, эмоциональная глубина' },
+  { id: 'cups_14', name: 'Король Кубков', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/cups_14_king.png', meaning: 'Эмоциональный баланс, дипломатия' },
 
-  // =====================================================================
-  // МЕЧИ (14 карт)
-  // =====================================================================
-  { id: 'swords01', name: 'Туз Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_01_ace.png`, desc_general: 'Ясность, новая идея, истина, прорыв.' },
-  { id: 'swords02', name: 'Двойка Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_02_two.png`, desc_general: 'Тупик, закрытость, нежелание видеть правду.' },
-  { id: 'swords03', name: 'Тройка Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_03_three.png`, desc_general: 'Разбитое сердце, горе, предательство, боль.' },
-  { id: 'swords04', name: 'Четверка Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_04_four.png`, desc_general: 'Отдых, пауза, восстановление.' },
-  { id: 'swords05', name: 'Пятерка Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_05_five.png`, desc_general: 'Пиррова победа, поражение, подлость, конфликт.' },
-  { id: 'swords06', name: 'Шестерка Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_06_six.png`, desc_general: 'Переход, путешествие, уход к лучшему берегу.' },
-  { id: 'swords07', name: 'Семерка Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_07_seven.png`, desc_general: 'Хитрость, обман, стратегия, скрытность.' },
-  { id: 'swords08', name: 'Восьмерка Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_08_eight.png`, desc_general: 'Ограничения, страхи, ментальная тюрьма.' },
-  { id: 'swords09', name: 'Девятка Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_09_nine.png`, desc_general: 'Кошмары, тревога, бессонница, чувство вины.' },
-  { id: 'swords10', name: 'Десятка Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_10_ten.png`, desc_general: 'Конец, дно, предательство, завершение цикла.' },
-  { id: 'swords11', name: 'Паж Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_11_page.png`, desc_general: 'Любопытство, шпионаж, сплетни, острый ум.' },
-  { id: 'swords12', name: 'Рыцарь Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_12_knight.png`, desc_general: 'Агрессия, скорость, прямолинейность, конфликт.' },
-  { id: 'swords13', name: 'Королева Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_13_queen.png`, desc_general: 'Независимость, холодный ум, ясность, вдова.' },
-  { id: 'swords14', name: 'Король Мечей', type: 'minor', imageUrl: `${BASE_URL}/swords_14_king.png`, desc_general: 'Интеллект, власть, логика, справедливость.' },
+  // --- МЕЧИ (SWORDS) ---
+  { id: 'swords_1', name: 'Туз Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_01_ace.png', meaning: 'Ясность, истина, новая мысль' },
+  { id: 'swords_2', name: 'Двойка Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_02_two.png', meaning: 'Тупик, закрытость, трудный выбор' },
+  { id: 'swords_3', name: 'Тройка Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_03_three.png', meaning: 'Боль, предательство, разбитое сердце' },
+  { id: 'swords_4', name: 'Четверка Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_04_four.png', meaning: 'Отдых, восстановление, медитация' },
+  { id: 'swords_5', name: 'Пятерка Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_05_five.png', meaning: 'Поражение, бесчестная победа, конфликт' },
+  { id: 'swords_6', name: 'Шестерка Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_06_six.png', meaning: 'Переход, уход от проблем, путешествие' },
+  { id: 'swords_7', name: 'Семерка Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_07_seven.png', meaning: 'Хитрость, обман, стратегия' },
+  { id: 'swords_8', name: 'Восьмерка Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_08_eight.png', meaning: 'Ограничение, ловушка разума' },
+  { id: 'swords_9', name: 'Девятка Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_09_nine.png', meaning: 'Кошмар, тревога, страх' },
+  { id: 'swords_10', name: 'Десятка Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_10_ten.png', meaning: 'Дно, конец, предательство' },
+  { id: 'swords_11', name: 'Паж Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_11_page.png', meaning: 'Любопытство, шпионаж, новости' },
+  { id: 'swords_12', name: 'Рыцарь Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_12_knight.png', meaning: 'Агрессия, скорость, прямота' },
+  { id: 'swords_13', name: 'Королева Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_13_queen.png', meaning: 'Независимость, проницательность, холодность' },
+  { id: 'swords_14', name: 'Король Мечей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/swords_14_king.png', meaning: 'Интеллект, власть, правда' },
 
-  // =====================================================================
-  // ПЕНТАКЛИ (14 карт)
-  // =====================================================================
-  { id: 'pents01', name: 'Туз Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_01_ace.png`, desc_general: 'Материальный шанс, деньги, здоровье, начало.' },
-  { id: 'pents02', name: 'Двойка Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_02_two.png`, desc_general: 'Балансирование, гибкость, перемены, суета.' },
-  { id: 'pents03', name: 'Тройка Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_03_three.png`, desc_general: 'Мастерство, работа в команде, признание.' },
-  { id: 'pents04', name: 'Четверка Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_04_four.png`, desc_general: 'Жадность, контроль, стабильность, накопление.' },
-  { id: 'pents05', name: 'Пятерка Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_05_five.png`, desc_general: 'Нужда, кризис, потери.' },
-  { id: 'pents06', name: 'Шестерка Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_06_six.png`, desc_general: 'Щедрость, благотворительность, помощь, долги.' },
-  { id: 'pents07', name: 'Семерка Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_07_seven.png`, desc_general: 'Терпение, ожидание урожая, оценка результатов.' },
-  { id: 'pents08', name: 'Восьмерка Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_08_eight.png`, desc_general: 'Мастерство, усердный труд, обучение, рутина.' },
-  { id: 'pents09', name: 'Девятка Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_09_nine.png`, desc_general: 'Роскошь, самодостаточность, комфорт, успех.' },
-  { id: 'pents10', name: 'Десятка Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_10_ten.png`, desc_general: 'Богатство, семья, наследие.' },
-  { id: 'pents11', name: 'Паж Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_11_page.png`, desc_general: 'Ученик, шанс, новости.' },
-  { id: 'pents12', name: 'Рыцарь Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_12_knight.png`, desc_general: 'Трудолюбие, надежность, медлительность, упорство.' },
-  { id: 'pents13', name: 'Королева Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_13_queen.png`, desc_general: 'Забота, практичность, комфорт, хозяйка.' },
-  { id: 'pents14', name: 'Король Пентаклей', type: 'minor', imageUrl: `${BASE_URL}/pentacles_14_king.png`, desc_general: 'Богатство, бизнес, надежность, успех.' },
+  // --- ПЕНТАКЛИ (PENTACLES) ---
+  { id: 'pentacles_1', name: 'Туз Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_01_ace.png', meaning: 'Шанс, прибыль, здоровье' },
+  { id: 'pentacles_2', name: 'Двойка Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_02_two.png', meaning: 'Баланс, гибкость, жонглирование' },
+  { id: 'pentacles_3', name: 'Тройка Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_03_three.png', meaning: 'Мастерство, работа в команде' },
+  { id: 'pentacles_4', name: 'Четверка Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_04_four.png', meaning: 'Жадность, стабильность, сохранение' },
+  { id: 'pentacles_5', name: 'Пятерка Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_05_five.png', meaning: 'Бедность, изоляция, кризис' },
+  { id: 'pentacles_6', name: 'Шестерка Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_06_six.png', meaning: 'Щедрость, помощь, баланс брать/давать' },
+  { id: 'pentacles_7', name: 'Семерка Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_07_seven.png', meaning: 'Ожидание, урожай, терпение' },
+  { id: 'pentacles_8', name: 'Восьмерка Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_08_eight.png', meaning: 'Труд, детали, обучение' },
+  { id: 'pentacles_9', name: 'Девятка Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_09_nine.png', meaning: 'Роскошь, самодостаточность, успех' },
+  { id: 'pentacles_10', name: 'Десятка Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_10_ten.png', meaning: 'Богатство, наследие, семья' },
+  { id: 'pentacles_11', name: 'Паж Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_11_page.png', meaning: 'Учеба, шанс, практичность' },
+  { id: 'pentacles_12', name: 'Рыцарь Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_12_knight.png', meaning: 'Упорство, надежность, рутина' },
+  { id: 'pentacles_13', name: 'Королева Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_13_queen.png', meaning: 'Забота, комфорт, практичность' },
+  { id: 'pentacles_14', name: 'Король Пентаклей', imageUrl: 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/pentacles_14_king.png', meaning: 'Богатство, бизнес, надежность' },
 ];
