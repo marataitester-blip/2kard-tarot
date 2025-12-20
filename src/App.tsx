@@ -4,17 +4,18 @@ import { TarotCard } from './types';
 import { analyzeRelationship } from './services/geminiService';
 import { speakText } from './services/ttsService';
 
-// --- ТИПЫ ---
 type AppMode = 'RELATIONSHIPS' | 'FINANCE' | 'GENERAL';
 type ConsultantType = 'STANDARD' | 'VIP';
-// Новые состояния для навигации "Прихожей"
 type Screen = 'DOOR' | 'HALLWAY' | 'OFFICE'; 
 
+// --- ССЫЛКИ НА АССЕТЫ С GITHUB (CDN) ---
+const CARD_BACK_URL = "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/rubashka.png";
+// Новая ссылка на партнеров (убедитесь, что загрузили файл partners.jpg в репозиторий!)
+const PARTNERS_BG_URL = "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/partners.jpg";
+
 const App: React.FC = () => {
-  // Навигация по "комнатам" сайта
   const [screen, setScreen] = useState<Screen>('DOOR');
   
-  // Состояния приложения
   const [step, setStep] = useState<'INTAKE' | 'SELECTION' | 'ANALYSIS'>('INTAKE');
   const [financeSubStep, setFinanceSubStep] = useState<1 | 2>(1);
   const [mode, setMode] = useState<'RANDOM' | 'MANUAL'>('RANDOM');
@@ -34,7 +35,13 @@ const App: React.FC = () => {
 
   // --- ХЕЛПЕРЫ ---
   const renderCardMedia = (card: TarotCard | null) => {
-    if (!card) return null;
+    if (!card) {
+       if (mode === 'RANDOM') {
+         return <img src={CARD_BACK_URL} className="w-full h-full object-cover opacity-80" alt="Рубашка" />;
+       }
+       return null;
+    }
+
     const isVideo = card.imageUrl.endsWith('.mp4');
     if (isVideo) {
       return <video src={card.imageUrl} className="w-full h-full object-cover opacity-90" autoPlay loop muted playsInline />;
@@ -47,15 +54,13 @@ const App: React.FC = () => {
     setResultText('');
     setUserProblem('');
     setAudioUrl(null);
-    // Не выкидываем на улицу, остаемся в кабинете
   };
 
   const fullReset = () => {
     reset();
-    setScreen('DOOR'); // Полный выход к двери
+    setScreen('DOOR');
   };
 
-  // --- ЛОГИКА ---
   const handleEnterOffice = (selectedMode: AppMode) => {
     setAppMode(selectedMode);
     setScreen('OFFICE');
@@ -107,45 +112,39 @@ const App: React.FC = () => {
     setIsGeneratingVoice(false);
   };
 
-  // --- КОМПОНЕНТЫ ИНТЕРФЕЙСА ---
+  // --- ЭКРАНЫ ---
   
-  // 1. ЭКРАН ВХОДА (ДВЕРЬ)
+  // 1. ДВЕРЬ (ГЛАВНАЯ ЗАСТАВКА)
   if (screen === 'DOOR') {
     return (
-      <div className="min-h-screen bg-[#050505] text-[#E0E0E0] font-serif flex flex-col items-center justify-center p-6 relative overflow-hidden">
-        {/* Фоновые элементы (потом заменим на картинки) */}
-        <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-[#1a1a1a] to-transparent opacity-50 pointer-events-none"></div>
+      <div className="min-h-screen bg-black text-[#E0E0E0] font-serif flex flex-col items-center justify-center p-6 relative overflow-hidden">
         
-        <div className="z-10 text-center max-w-lg animate-fade-in flex flex-col items-center gap-8">
-          
-          <div className="flex justify-center gap-8 mb-4">
-            {/* Портрет Мессира */}
-            <div className="w-24 h-32 border border-[#FFD700]/30 bg-[#111] rounded-lg flex items-center justify-center relative shadow-[0_0_30px_rgba(255,215,0,0.1)] grayscale hover:grayscale-0 transition-all duration-700">
-               <span className="text-[#FFD700] text-2xl">🦁</span>
-               <div className="absolute -bottom-6 text-[10px] text-[#FFD700] tracking-widest uppercase">Мессир</div>
-            </div>
-            
-            {/* Портрет Марго */}
-            <div className="w-24 h-32 border border-[#D4AF37]/30 bg-[#111] rounded-lg flex items-center justify-center relative shadow-[0_0_30px_rgba(212,175,55,0.1)] grayscale hover:grayscale-0 transition-all duration-700">
-               <span className="text-[#D4AF37] text-2xl">🦊</span>
-               <div className="absolute -bottom-6 text-[10px] text-[#D4AF37] tracking-widest uppercase">Марго</div>
-            </div>
-          </div>
+        {/* ФОНОВАЯ КАРТИНКА С GITHUB */}
+        <div 
+            className="absolute inset-0 bg-center bg-cover bg-no-repeat opacity-40 transition-opacity duration-1000 animate-fade-in"
+            style={{ backgroundImage: `url('${PARTNERS_BG_URL}')` }}
+        ></div>
+        
+        {/* Градиент */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
 
+        <div className="z-10 text-center max-w-lg animate-fade-in flex flex-col items-center gap-10 mt-32">
+          
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-200 via-gray-400 to-gray-200 font-cinzel mb-2">
+            <h1 className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-[#FDB931] to-[#D4AF37] font-cinzel mb-4 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
               НЕПРАВИЛЬНАЯ<br/>ПСИХОЛОГИЯ
             </h1>
-            <p className="text-xs text-gray-500 tracking-[0.3em] uppercase">Карты знают то, о чем молчат дипломы</p>
+            <p className="text-sm md:text-base text-gray-300 tracking-[0.3em] uppercase drop-shadow-md">
+              Карты знают то, о чем молчат дипломы
+            </p>
           </div>
 
           <button 
             onClick={() => setScreen('HALLWAY')}
-            className="group relative px-8 py-4 bg-transparent border border-[#333] hover:border-[#D4AF37] rounded transition-all duration-500"
+            className="group relative px-10 py-5 bg-black/60 border border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black rounded transition-all duration-500 shadow-[0_0_20px_rgba(212,175,55,0.2)]"
           >
-            <div className="absolute inset-0 w-full h-full bg-[#D4AF37]/5 scale-0 group-hover:scale-100 transition-transform duration-500 rounded"></div>
-            <span className="relative text-[#D4AF37] uppercase tracking-widest font-bold text-sm group-hover:text-white transition-colors">
-              🔔 Позвонить в дверь
+            <span className="relative uppercase tracking-widest font-bold text-sm group-hover:text-black transition-colors text-[#D4AF37]">
+              Войти в Кабинет
             </span>
           </button>
         </div>
@@ -153,12 +152,11 @@ const App: React.FC = () => {
     );
   }
 
-  // 2. ЭКРАН ПРИХОЖЕЙ (ПРАВИЛА)
+  // 2. ПРИХОЖАЯ
   if (screen === 'HALLWAY') {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-[#E0E0E0] font-serif flex flex-col items-center justify-center p-6 animate-fade-in">
         <div className="max-w-md w-full border border-[#222] p-8 rounded bg-[#111] relative shadow-2xl">
-          {/* Гвоздик */}
           <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-[#333] border border-[#111]"></div>
           
           <h2 className="text-center text-xl text-[#D4AF37] font-cinzel mb-8 tracking-widest border-b border-[#333] pb-4">
@@ -172,23 +170,19 @@ const App: React.FC = () => {
             </li>
             <li className="flex gap-3">
               <span className="text-[#D4AF37] font-bold">02.</span>
-              <span>Выбирайте проводника с умом. Марго ударит правдой в лоб, Мессир вскроет душу скальпелем.</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="text-[#D4AF37] font-bold">03.</span>
-              <span>Результат может вам не понравиться. Жалобы не принимаются.</span>
+              <span>Марго ударит правдой в лоб. Мессир вскроет душу скальпелем. Выбирайте.</span>
             </li>
           </ul>
 
           <div className="space-y-3">
-            <p className="text-center text-xs text-gray-600 uppercase tracking-widest mb-2">Куда направимся?</p>
-            <button onClick={() => handleEnterOffice('RELATIONSHIPS')} className="w-full py-3 border border-[#333] hover:border-[#D4AF37] text-gray-300 hover:text-[#D4AF37] rounded transition-all uppercase text-xs tracking-widest">
+            <p className="text-center text-xs text-gray-600 uppercase tracking-widest mb-2">Выберите тему</p>
+            <button onClick={() => handleEnterOffice('RELATIONSHIPS')} className="w-full py-4 border border-[#333] hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 text-gray-300 hover:text-[#D4AF37] rounded transition-all uppercase text-xs tracking-widest font-bold">
               ❤️ Отношения (Драма)
             </button>
-            <button onClick={() => handleEnterOffice('GENERAL')} className="w-full py-3 border border-[#333] hover:border-[#D4AF37] text-gray-300 hover:text-[#D4AF37] rounded transition-all uppercase text-xs tracking-widest">
+            <button onClick={() => handleEnterOffice('GENERAL')} className="w-full py-4 border border-[#333] hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 text-gray-300 hover:text-[#D4AF37] rounded transition-all uppercase text-xs tracking-widest font-bold">
               🔮 Судьба (3 Карты)
             </button>
-            <button onClick={() => handleEnterOffice('FINANCE')} className="w-full py-3 border border-[#333] hover:border-[#D4AF37] text-gray-300 hover:text-[#D4AF37] rounded transition-all uppercase text-xs tracking-widest">
+            <button onClick={() => handleEnterOffice('FINANCE')} className="w-full py-4 border border-[#333] hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 text-gray-300 hover:text-[#D4AF37] rounded transition-all uppercase text-xs tracking-widest font-bold">
               💸 Финансы (Стратегия)
             </button>
           </div>
@@ -201,7 +195,7 @@ const App: React.FC = () => {
     );
   }
 
-  // 3. ЭКРАН КАБИНЕТА (ОСНОВНОЕ ПРИЛОЖЕНИЕ)
+  // 3. КАБИНЕТ
   const CardSlot = ({ card, position, label }: { card: TarotCard | null, position: number, label: string }) => (
     <div className="flex-1 flex flex-col gap-2 min-w-[90px]">
       <span className="text-[10px] text-center text-gray-400 uppercase tracking-wider h-8 flex items-center justify-center leading-tight">{label}</span>
@@ -214,7 +208,7 @@ const App: React.FC = () => {
            {renderCardMedia(card)}
            <div className={`absolute bottom-0 w-full bg-black/80 text-center text-[9px] p-1 leading-tight transition-colors duration-500
              ${consultant === 'VIP' ? 'text-[#FFD700]' : 'text-[#D4AF37]'}`}>
-             {card?.name}
+             {card?.name || "..."}
            </div>
         </div>
       ) : (
@@ -238,10 +232,8 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#050505] text-[#E0E0E0] font-serif flex flex-col items-center p-4 animate-fade-in">
-      
-      {/* Кнопка выхода */}
-      <button onClick={() => setScreen('HALLWAY')} className="absolute top-4 left-4 text-gray-600 hover:text-[#D4AF37] transition-colors">
-        ← В коридор
+      <button onClick={() => setScreen('HALLWAY')} className="absolute top-4 left-4 text-gray-600 hover:text-[#D4AF37] transition-colors text-xs uppercase tracking-widest">
+        ← Выход
       </button>
 
       <header className="mb-6 mt-8 text-center">
@@ -257,14 +249,13 @@ const App: React.FC = () => {
         </p>
       </header>
 
-      {/* --- ШАГ 1: ВВОД --- */}
+      {/* ШАГ 1: ВВОД */}
       {step === 'INTAKE' && (
         <div className="w-full max-w-md flex flex-col gap-6">
-          
           <textarea 
             value={userProblem}
             onChange={(e) => setUserProblem(e.target.value)}
-            placeholder="Опишите ситуацию. Честно."
+            placeholder="Рассказывайте. Как есть."
             className="w-full h-32 bg-[#111] border border-[#333] rounded-lg p-4 text-gray-300 focus:border-[#D4AF37] focus:outline-none resize-none placeholder-gray-600"
           />
 
@@ -272,22 +263,20 @@ const App: React.FC = () => {
             <div onClick={() => setConsultant('STANDARD')} className={`border rounded-lg p-3 cursor-pointer transition-all flex flex-col gap-1 relative ${consultant === 'STANDARD' ? 'border-[#D4AF37] bg-[#D4AF37]/10' : 'border-[#333] opacity-60 hover:opacity-100'}`}>
               <div className="text-[#D4AF37] font-bold text-sm">МАРГО</div>
               <div className="text-[10px] text-gray-400">Циничный практик</div>
-              <div className="text-[9px] text-gray-600 mt-1 italic">"Без соплей."</div>
             </div>
             <div onClick={() => setConsultant('VIP')} className={`border rounded-lg p-3 cursor-pointer transition-all flex flex-col gap-1 relative overflow-hidden ${consultant === 'VIP' ? 'border-[#FFD700] bg-gradient-to-br from-[#FFD700]/10 to-black' : 'border-[#333] opacity-60 hover:opacity-100'}`}>
               <div className="absolute top-0 right-0 bg-[#FFD700] text-black text-[9px] font-bold px-2 py-0.5 rounded-bl">VIP</div>
               <div className="text-[#FFD700] font-bold text-sm">МЕССИР</div>
               <div className="text-[10px] text-gray-300">Наблюдатель</div>
-              <div className="text-[9px] text-[#FFD700]/70 mt-1 italic">"Рукописи не горят."</div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <button onClick={() => setMode('RANDOM')} className={`p-3 border rounded-lg text-xs uppercase flex items-center justify-center gap-2 transition-colors ${mode === 'RANDOM' ? 'border-gray-500 bg-gray-800 text-white' : 'border-[#333] text-gray-500'}`}>
-              🎲 Случайный расклад
+              🎲 Рандом
             </button>
             <button onClick={() => setMode('MANUAL')} className={`p-3 border rounded-lg text-xs uppercase flex items-center justify-center gap-2 transition-colors ${mode === 'MANUAL' ? 'border-gray-500 bg-gray-800 text-white' : 'border-[#333] text-gray-500'}`}>
-              🤲 Выбрать карты
+              🤲 Вручную
             </button>
           </div>
 
@@ -297,10 +286,9 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* --- ШАГ 2: ВЫБОР КАРТ --- */}
+      {/* ШАГ 2: КАРТЫ */}
       {step === 'SELECTION' && (
         <div className="w-full max-w-md flex flex-col gap-6">
-          
           {appMode === 'RELATIONSHIPS' && (
             <>
               <div className="flex justify-center gap-4">
@@ -331,17 +319,17 @@ const App: React.FC = () => {
               {financeSubStep === 1 ? (
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-center gap-4">
-                    <CardSlot card={card1} position={1} label="АКТИВ (Ты)" />
-                    <CardSlot card={card2} position={2} label="ПОТОК (Кэш)" />
+                    <CardSlot card={card1} position={1} label="АКТИВ" />
+                    <CardSlot card={card2} position={2} label="ПОТОК" />
                   </div>
                   <button onClick={() => setFinanceSubStep(2)} disabled={!card1 || !card2} className="w-full py-3 mt-4 bg-[#222] text-white border border-[#444] rounded hover:border-[#D4AF37] transition-colors">
-                    Далее: Стратегия ▼
+                    Далее ▼
                   </button>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-center gap-4">
-                    <CardSlot card={card3} position={3} label="АМБИЦИИ" />
+                    <CardSlot card={card3} position={3} label="ПЛАН" />
                     <CardSlot card={card4} position={4} label="РЕАЛЬНОСТЬ" />
                   </div>
                   <div className="flex gap-2 mt-4">
@@ -357,21 +345,18 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* --- ШАГ 3: РЕЗУЛЬТАТ --- */}
+      {/* ШАГ 3: РЕЗУЛЬТАТ */}
       {step === 'ANALYSIS' && (
         <div className="w-full max-w-lg flex flex-col items-center pb-10">
-          
           {isLoading ? (
             <div className="text-center mt-20">
               <div className={`w-16 h-16 border-t-2 border-r-2 rounded-full animate-spin mx-auto mb-4 ${consultant === 'VIP' ? 'border-[#FFD700]' : 'border-[#D4AF37]'}`}></div>
               <p className={`animate-pulse ${consultant === 'VIP' ? 'text-[#FFD700]' : 'text-[#D4AF37]'}`}>
-                {consultant === 'VIP' ? 'Мессир размышляет...' : 'Марго считает убытки...'}
+                {consultant === 'VIP' ? 'Мессир размышляет...' : 'Марго считает...'}
               </p>
             </div>
           ) : (
             <div className={`w-full bg-[#0a0a0a] border p-6 rounded-lg shadow-2xl relative transition-colors duration-500 ${consultant === 'VIP' ? 'border-[#FFD700]/50 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'border-[#333] shadow-lg'}`}>
-              
-              {/* Карты результата */}
               <div className="mb-6 border-b border-[#222] pb-6 flex justify-center gap-2">
                 {appMode === 'RELATIONSHIPS' && (
                    <>
@@ -396,7 +381,6 @@ const App: React.FC = () => {
                 )}
               </div>
 
-              {/* ПЛЕЕР */}
               <div className="mb-6">
                 {!audioUrl ? (
                   <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className={`w-full py-2 rounded border border-dashed text-xs uppercase font-bold tracking-widest transition-all flex items-center justify-center gap-2 ${isGeneratingVoice ? 'border-gray-700 text-gray-500 cursor-wait' : (consultant === 'VIP' ? 'border-[#FFD700]/50 text-[#FFD700] hover:bg-[#FFD700]/10' : 'border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10')}`}>
