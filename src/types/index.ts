@@ -1,7 +1,13 @@
 export interface TarotCard {
   id: string;
   name: string;
-  type: 'major' | 'minor'; // <--- Эта строка исправит ошибку сборки!
   imageUrl: string;
-  desc_general: string;
+  
+  // --- Новые поля (для новой базы с GitHub) ---
+  nameEnglish?: string; 
+  meaning?: string;     
+  
+  // --- Старые поля (для совместимости) ---
+  type?: 'major' | 'minor'; 
+  desc_general?: string;
 }
