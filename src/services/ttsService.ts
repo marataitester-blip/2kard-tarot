@@ -1,26 +1,22 @@
 import { AppMode } from '../types';
 
-// Карта голосов (ID моделей OpenAI)
+// Карта голосов
 const VOICES = {
-  MARGO: "shimmer", // Женский, с хрипотцой
-  MESSIRE: "onyx"   // Мужской, глубокий, богатый
+  MARGO: "shimmer", 
+  MESSIRE: "onyx"   
 };
 
+// Добавили _ перед mode, чтобы TS не ругался на неиспользуемую переменную
 export const speakText = async (
   text: string, 
   consultant: 'STANDARD' | 'VIP', 
-  mode: AppMode
+  _mode: AppMode 
 ): Promise<string | null> => {
   try {
     const voice = consultant === 'VIP' ? VOICES.MESSIRE : VOICES.MARGO;
     
-    // Очищаем текст от Markdown символов (*, #) для лучшего звучания
     const cleanText = text.replace(/[*#]/g, '');
 
-    // Отправляем запрос на наш API (или напрямую, если ключ на клиенте, но лучше через api/tts)
-    // Здесь мы используем прямой запрос к OpenAI (если у вас настроен прокси, поменяйте URL)
-    
-    // ВАЖНО: Мы используем ключ из .env
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY; 
     
     if (!apiKey) {
@@ -38,7 +34,7 @@ export const speakText = async (
         model: "tts-1",
         input: cleanText,
         voice: voice,
-        speed: consultant === 'VIP' ? 0.9 : 1.0, // Мессир говорит чуть медленнее
+        speed: consultant === 'VIP' ? 0.9 : 1.0,
       }),
     });
 
