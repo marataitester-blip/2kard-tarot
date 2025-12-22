@@ -8,5 +8,5 @@ export interface TarotCard {
   desc_general?: string;
 }
 
-// Теперь у нас 5 режимов
+// Убираем GENERAL, оставляем только новые 5 режимов
 export type AppMode = 'BLITZ' | 'RELATIONSHIPS' | 'FATE' | 'FINANCE' | 'CROSS';
