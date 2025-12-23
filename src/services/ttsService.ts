@@ -9,6 +9,9 @@ export const speakText = async (
   mode: AppMode
 ): Promise<string | null> => {
   
+  // ИСПОЛЬЗУЕМ переменную mode, чтобы не было ошибки сборки
+  console.log(`Генерация голоса для режима: ${mode}`); 
+
   if (!API_KEY) {
     console.error("ОШИБКА: Ключ API не найден. Убедитесь, что в Vercel добавлена переменная VITE_OPENAI_API_KEY");
     alert("Ошибка конфигурации: Нет API ключа.");
