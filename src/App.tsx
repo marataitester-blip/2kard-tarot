@@ -351,7 +351,6 @@ const App: React.FC = () => {
             <div className="flex-grow flex flex-col relative min-h-0">
                
                {/* 1. ЗОНА КАРТ */}
-               {/* Если карты просто лежат - занимают всё место. Если результат - сжимаются вверх. */}
                <div className={`transition-all duration-700 w-full flex flex-col items-center justify-center shrink-0 
                  ${analysisStep === 'TABLE' ? 'flex-grow' : 'h-[35vh] min-h-[220px]'}`}>
                  
@@ -364,3 +363,78 @@ const App: React.FC = () => {
                     <div className="absolute bottom-10 z-30">
                        <button onClick={handleRevealCards} className="px-8 py-4 bg-[#D4AF37] text-black font-bold uppercase tracking-[0.2em] rounded-full shadow-[0_0_30px_rgba(212,175,55,0.4)] animate-pulse hover:scale-105 transition-transform">
                          Вскрыть Карты
+                       </button>
+                    </div>
+                 )}
+                 
+                 {/* Кнопка Трактовки */}
+                 {analysisStep === 'TABLE' && cardsRevealed && (
+                    <div className="absolute bottom-10 z-30 animate-fade-in">
+                       <button onClick={handleGetInterpretation} className={`px-8 py-4 font-bold uppercase tracking-[0.2em] rounded-full shadow-lg hover:scale-105 transition-transform backdrop-blur-md border border-white/20 ${consultant === 'VIP' ? 'bg-gradient-to-r from-[#FFD700]/80 to-black text-[#FFD700]' : 'bg-gradient-to-r from-[#D4AF37]/80 to-black text-[#D4AF37]'}`}>
+                         {consultant === 'VIP' ? '📜 Откровение Мессира' : '🦊 Марго говорит'}
+                       </button>
+                    </div>
+                 )}
+               </div>
+
+               {/* 2. ЗОНА ТЕКСТА (НИЗ - FLEX GROW) */}
+               {analysisStep === 'RESULT' && (
+                  <div className="flex-grow flex flex-col bg-[#050505]/95 backdrop-blur-xl border-t border-[#D4AF37]/30 rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-slide-up min-h-0">
+                     
+                     {/* ХЕДЕР ТЕКСТА */}
+                     <div className="p-4 border-b border-[#333] flex items-center justify-between shrink-0">
+                        <div className="flex items-center gap-2">
+                           <div className={`w-2 h-2 rounded-full ${consultant === 'VIP' ? 'bg-[#FFD700]' : 'bg-[#D4AF37]'}`}></div>
+                           <span className={`text-xs font-bold uppercase tracking-widest ${consultant === 'VIP' ? 'text-[#FFD700]' : 'text-[#D4AF37]'}`}>
+                             {consultant === 'VIP' ? 'МЕССИР' : 'МАРГО'}
+                           </span>
+                        </div>
+                        <div className="flex gap-4 items-center">
+                           <button onClick={handleCopyText} className="text-gray-400 hover:text-white text-lg" title="Копировать">📋</button>
+                           <button onClick={handleDownloadImage} className="text-gray-400 hover:text-white text-lg" title="Фото">📸</button>
+                           {!audioUrl ? (
+                             <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className="text-gray-400 hover:text-white text-lg">
+                               {isGeneratingVoice ? '⏳' : '🔊'}
+                             </button>
+                           ) : (
+                             // СТАНДАРТНЫЙ ПЛЕЕР ДЛЯ IOS
+                             <audio controls playsInline src={audioUrl} className="h-8 w-32 md:w-48" />
+                           )}
+                        </div>
+                     </div>
+
+                     {/* ТЕЛО ТЕКСТА (СКРОЛЛИТСЯ) */}
+                     <div className="flex-grow overflow-y-auto p-6 text-sm text-gray-300 leading-relaxed font-serif scrollbar-thin scrollbar-thumb-[#D4AF37]/20">
+                        {isLoading ? (
+                           <div className="flex flex-col items-center justify-center h-full gap-4">
+                             <div className="w-8 h-8 border-2 border-dashed border-[#D4AF37] rounded-full animate-spin"></div>
+                             <span className="text-xs text-[#D4AF37] animate-pulse">Чтение знаков...</span>
+                           </div>
+                        ) : (
+                          <>
+                            <div className="whitespace-pre-wrap">{resultText}</div>
+                            
+                            {/* Кнопка второго мнения */}
+                            {resultText && (
+                               <div className="mt-8 pt-6 border-t border-[#333] text-center pb-4">
+                                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Хотите другой взгляд?</p>
+                                  <button onClick={handleSecondOpinion} className={`w-full py-3 border border-dashed rounded transition-colors text-xs uppercase font-bold tracking-widest flex items-center justify-center gap-2 ${consultant === 'VIP' ? 'border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/10' : 'border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700]/10'}`}>
+                                    {consultant === 'VIP' ? '🦊 Спросить Марго' : '🦁 Мнение Мессира'}
+                                  </button>
+                               </div>
+                            )}
+                          </>
+                        )}
+                     </div>
+                  </div>
+               )}
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+};
+
+export default App;
