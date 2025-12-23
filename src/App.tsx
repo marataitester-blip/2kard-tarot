@@ -44,10 +44,27 @@ const App: React.FC = () => {
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
+  // --- НАСТРОЙКИ ПОЛНОЭКРАННОГО РЕЖИМА ---
   useEffect(() => {
+    // 1. Устанавливаем Favicon
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (link) link.href = ASSETS.img_favicon;
     document.title = "Неправильная Психология";
+
+    // 2. Мета-теги для iPhone (PWA Mode) - убирают интерфейс браузера при добавлении на главный экран
+    const metaApple = document.createElement('meta');
+    metaApple.name = "apple-mobile-web-app-capable";
+    metaApple.content = "yes";
+    document.head.appendChild(metaApple);
+
+    const metaStatus = document.createElement('meta');
+    metaStatus.name = "apple-mobile-web-app-status-bar-style";
+    metaStatus.content = "black-translucent"; // Прозрачный статус бар
+    document.head.appendChild(metaStatus);
+
+    // 3. Блокировка резинового скролла на body
+    document.body.style.overscrollBehavior = "none";
+    document.body.style.backgroundColor = "black";
   }, []);
 
   // --- ФУНКЦИИ ---
@@ -198,7 +215,6 @@ const App: React.FC = () => {
       );
     }
     if (appMode === 'CROSS') {
-      // Уменьшил размер креста, чтобы влезал
       return (
         <div className="relative w-full max-w-[220px] aspect-[3/4] mx-auto my-auto">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] z-20 shadow-2xl scale-110"><CardImage card={selectedCards[0]} /></div>
@@ -213,10 +229,10 @@ const App: React.FC = () => {
   };
 
   return (
-    // ГЛАВНЫЙ КОНТЕЙНЕР: Фиксируем высоту по экрану (100dvh) и запрещаем скролл BODY
+    // ГЛАВНЫЙ КОНТЕЙНЕР (100dvh - адаптивная высота)
     <div className="h-[100dvh] w-full font-serif flex flex-col relative overflow-hidden text-[#E0E0E0] selection:bg-[#D4AF37] selection:text-black">
       
-      {/* ЗУМ КАРТЫ (Независимый слой) */}
+      {/* ЗУМ КАРТЫ */}
       {zoomedCard && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-6 cursor-zoom-out" onClick={() => setZoomedCard(null)}>
           <div className="relative max-w-lg w-full max-h-[85vh] aspect-[2/3] flex flex-col items-center">
@@ -237,13 +253,12 @@ const App: React.FC = () => {
          <div className="absolute inset-0 bg-black/60"></div> 
       </div>
 
-      {/* --- ЭКРАН 1: ВХОД (ПРИХОЖАЯ) --- */}
+      {/* --- ЭКРАН 1: ПРИХОЖАЯ --- */}
       {screen === 'HALLWAY' && (
         <div className="relative z-10 w-full h-full flex flex-col overflow-y-auto">
-          {/* Контент прихожей центрируем и даем отступы */}
+          {/* Контент прихожей */}
           {introStep === 'HERO' && (
             <div className="flex-grow flex flex-col items-center justify-center gap-8 p-6">
-               {/* Кнопки героев */}
                <div className="flex gap-4 md:gap-12 mt-auto">
                   <button onClick={() => { setConsultant('VIP'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#FFD700]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#FFD700] hover:text-black transition-all flex flex-col items-center gap-1 group">
                      <span className="text-xl">🦁</span><span className="text-[#FFD700] group-hover:text-black font-bold text-xs tracking-widest uppercase">МЕССИР</span>
@@ -253,13 +268,11 @@ const App: React.FC = () => {
                   </button>
                </div>
                
-               {/* Заголовок */}
                <div className="text-center">
                   <h1 className="text-3xl md:text-5xl font-bold text-[#D4AF37] font-cinzel tracking-widest">PSY TAROT</h1>
                   <p className="text-[10px] md:text-xs uppercase tracking-[0.4em] opacity-80 mt-1">Неправильная психология</p>
                </div>
 
-               {/* Кнопки сервиса (Низ) */}
                <div className="mb-auto mt-8 flex flex-wrap justify-center gap-3">
                   <a href={LINKS.MASTER} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/40 rounded-full text-[10px] text-[#D4AF37] uppercase tracking-widest font-bold">Связь с Мастером</a>
                   <a href={LINKS.COMMUNITY} className="px-4 py-2 bg-white/5 border border-white/20 rounded-full text-[10px] text-gray-300 uppercase tracking-widest">Комьюнити</a>
@@ -267,7 +280,6 @@ const App: React.FC = () => {
             </div>
           )}
           
-          {/* Модалки выбора расклада и ввода - они поверх всего */}
           {introStep === 'LAYOUT' && (
              <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm z-50">
                 <div className="w-full max-w-sm bg-[#111] border border-white/10 p-6 rounded-2xl shadow-2xl flex flex-col gap-3">
@@ -295,11 +307,11 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* --- ЭКРАН 2: КАБИНЕТ (OFFICE) - СТРОГАЯ СЕТКА --- */}
+      {/* --- ЭКРАН 2: КАБИНЕТ (OFFICE) --- */}
       {screen === 'OFFICE' && (
         <div className="relative z-10 w-full h-full flex flex-col overflow-hidden">
           
-          {/* 1. ВЕРХНИЙ БАР (Фиксированный) */}
+          {/* ШАПКА */}
           <div className="w-full flex justify-between items-center px-4 py-2 bg-black/20 shrink-0 h-10">
              <button onClick={fullReset} className="text-[10px] text-gray-400 hover:text-[#D4AF37] uppercase tracking-widest flex items-center gap-2">
                <span>✕</span> Выход
@@ -307,24 +319,20 @@ const App: React.FC = () => {
              <div className="text-[9px] text-[#D4AF37]/60 uppercase tracking-widest">{appMode}</div>
           </div>
 
-          {/* 2. ГЛАВНАЯ ЗОНА (FLEX) */}
-          {/* Используем flex-1, чтобы занять всё место, и min-h-0 чтобы разрешить сжатие */}
+          {/* КОНТЕНТ (FLEX) */}
           <div className="flex-1 flex flex-col min-h-0">
              
-             {/* 2.1. ЗОНА КАРТ (ВЕРХ) */}
-             {/* Она гибкая. Если текста нет, занимает всё. Если текст есть, сжимается, но не меньше min-h-[...]. */}
+             {/* 1. ВЕРХ: КАРТЫ (УВЕЛИЧЕНО до 55% при результате) */}
              <div className={`flex flex-col items-center justify-center transition-all duration-500 
-                ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[40%] min-h-[200px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}>
+                ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[55%] min-h-[220px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}>
                 
                 <div ref={layoutRef} className="w-full h-full p-2 flex items-center justify-center overflow-hidden">
                    {RenderLayout()}
                 </div>
              </div>
 
-             {/* 2.2. ЗОНА УПРАВЛЕНИЯ (СЕРЕДИНА) */}
-             {/* Это отдельный блок в потоке flex, он никогда не налезет на карты */}
+             {/* 2. ПАНЕЛЬ УПРАВЛЕНИЯ (Кнопки) */}
              <div className="shrink-0 w-full flex justify-center items-center py-2 bg-gradient-to-t from-black via-black/50 to-transparent z-20">
-                {/* КНОПКИ УПРАВЛЕНИЯ */}
                 {!cardsRevealed && analysisStep === 'TABLE' && (
                    <button onClick={handleRevealCards} className="px-6 py-3 bg-[#D4AF37] text-black font-bold uppercase tracking-widest rounded-full shadow-lg animate-pulse">
                       Вскрыть
@@ -338,34 +346,34 @@ const App: React.FC = () => {
                 )}
              </div>
 
-             {/* 2.3. ЗОНА ТЕКСТА (НИЗ) */}
-             {/* Появляется только при результате. Занимает оставшееся место (flex-1). Скроллится ВНУТРИ себя. */}
+             {/* 3. НИЗ: ТЕКСТ (Занимает оставшиеся 45%) */}
              {analysisStep === 'RESULT' && (
                 <div className="flex-1 flex flex-col bg-[#050505]/95 min-h-0 border-t border-[#333]">
                    
-                   {/* Шапка плеера */}
-                   <div className="h-12 shrink-0 border-b border-[#333] flex items-center justify-between px-4 bg-[#111]">
+                   {/* Плеер */}
+                   <div className="h-14 shrink-0 border-b border-[#333] flex items-center justify-between px-4 bg-[#111]">
                       <div className="flex items-center gap-2">
                          <div className={`w-2 h-2 rounded-full ${consultant === 'VIP' ? 'bg-[#FFD700]' : 'bg-[#D4AF37]'}`}></div>
                          <span className={`text-[10px] font-bold uppercase tracking-widest ${consultant === 'VIP' ? 'text-[#FFD700]' : 'text-[#D4AF37]'}`}>
                            {consultant === 'VIP' ? 'МЕССИР' : 'МАРГО'}
                          </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                         <button onClick={handleDownloadImage} className="text-gray-400">📸</button>
-                         <button onClick={handleShare} className="text-gray-400">🔗</button>
+                      <div className="flex items-center gap-2">
+                         <button onClick={handleDownloadImage} className="text-gray-400 p-2">📸</button>
+                         <button onClick={handleShare} className="text-gray-400 p-2">🔗</button>
                          {!audioUrl ? (
-                           <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className="text-gray-400 text-lg">
+                           <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className="text-gray-400 text-lg p-2">
                              {isGeneratingVoice ? '...' : '🔊'}
                            </button>
                          ) : (
-                           <audio controls playsInline src={audioUrl} className="h-6 w-28" />
+                           // СТАНДАРТНЫЙ ПЛЕЕР (IOS fix)
+                           <audio controls playsInline src={audioUrl} className="h-8 w-28 md:w-40" />
                          )}
                       </div>
                    </div>
 
-                   {/* Скроллящийся текст */}
-                   <div className="flex-1 overflow-y-auto p-4 text-sm text-gray-300 leading-relaxed font-serif pb-safe">
+                   {/* Скролл ТЕКСТА */}
+                   <div className="flex-1 overflow-y-auto p-6 text-sm text-gray-300 leading-relaxed font-serif pb-20">
                       {isLoading ? (
                          <div className="flex flex-col items-center justify-center h-full gap-2">
                            <div className="w-6 h-6 border-2 border-dashed border-[#D4AF37] rounded-full animate-spin"></div>
@@ -373,9 +381,7 @@ const App: React.FC = () => {
                          </div>
                       ) : (
                          <>
-                           <div className="whitespace-pre-wrap mb-6">{resultText}</div>
-                           
-                           {/* Второе мнение */}
+                           <div className="whitespace-pre-wrap mb-6 pt-4">{resultText}</div>
                            <div className="pt-4 border-t border-[#333] text-center pb-8">
                               <p className="text-[9px] text-gray-500 uppercase tracking-widest mb-2">Другой взгляд</p>
                               <button onClick={handleSecondOpinion} className={`w-full py-3 border border-dashed rounded text-xs uppercase font-bold tracking-widest ${consultant === 'VIP' ? 'border-[#D4AF37]/30 text-[#D4AF37]' : 'border-[#FFD700]/30 text-[#FFD700]'}`}>
