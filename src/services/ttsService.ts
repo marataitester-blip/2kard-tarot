@@ -1,6 +1,6 @@
 import { AppMode } from '../types';
 
-// Vite автоматически подтягивает переменные, начинающиеся с VITE_
+// Получаем ключ
 const API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 export const speakText = async (
@@ -9,21 +9,20 @@ export const speakText = async (
   mode: AppMode
 ): Promise<string | null> => {
   
-  // ИСПОЛЬЗУЕМ переменную mode, чтобы не было ошибки сборки
-  console.log(`Генерация голоса для режима: ${mode}`); 
+  // 1. Используем переменную mode для логов (чтобы не было ошибки сборки)
+  console.log(`[TTS] Start generation. Mode: ${mode}, Consultant: ${consultant}`);
 
+  // 2. ПРОВЕРКА КЛЮЧА
   if (!API_KEY) {
-    console.error("ОШИБКА: Ключ API не найден. Убедитесь, что в Vercel добавлена переменная VITE_OPENAI_API_KEY");
-    alert("Ошибка конфигурации: Нет API ключа.");
+    console.error("CRITICAL: VITE_OPENAI_API_KEY is missing!");
+    alert("ОШИБКА: Ключ API не найден в Vercel. Проверьте переменную VITE_OPENAI_API_KEY.");
     return null;
   }
 
   try {
-    // Выбираем голос: 
-    // onyx - глубокий мужской (Мессир)
-    // shimmer - звонкий женский (Марго)
     const voice = consultant === 'VIP' ? 'onyx' : 'shimmer'; 
 
+    // 3. ЗАПРОС
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
@@ -38,26 +37,28 @@ export const speakText = async (
       }),
     });
 
+    // 4. ДИАГНОСТИКА ОШИБОК СЕРВЕРА
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("TTS API Error:", response.status, errorData);
+      const errorText = await response.text(); // Читаем текст ошибки
+      console.error("OpenAI API Error:", response.status, errorText);
+      alert(`ОШИБКА API (${response.status}): ${errorText.slice(0, 100)}`); // Показываем ошибку на экране
       return null;
     }
 
-    // Превращаем ответ в Blob (аудио-файл в памяти)
+    // 5. УСПЕШНОЕ ПОЛУЧЕНИЕ ФАЙЛА
     const blob = await response.blob();
-    // Создаем ссылку на этот файл, которую понимает <audio> плеер
     const audioUrl = URL.createObjectURL(blob);
     
     return audioUrl;
 
-  } catch (error) {
-    console.error("TTS Network Error:", error);
+  } catch (error: any) {
+    // 6. ОШИБКИ СЕТИ
+    console.error("Network Error:", error);
+    alert(`ОШИБКА СЕТИ: ${error.message || 'Неизвестная ошибка связи'}`);
     return null;
   }
 };
 
 export const stopSpeaking = () => {
-  // Для серверного аудио сброс делается в компоненте через setAudioUrl(null)
-  // Эта функция оставлена для совместимости интерфейсов
+  // Заглушка
 };
