@@ -23,29 +23,24 @@ const LINKS = {
 };
 
 const App: React.FC = () => {
-  // --- СОСТОЯНИЯ ---
   const [screen, setScreen] = useState<Screen>('HALLWAY');
   const [introStep, setIntroStep] = useState<IntroStep>('HERO');
-  
   const [consultant, setConsultant] = useState<ConsultantType>('STANDARD');
   const [appMode, setAppMode] = useState<AppMode>('RELATIONSHIPS');
   const [userProblem, setUserProblem] = useState('');
   
-  // Карты
   const [selectedCards, setSelectedCards] = useState<(TarotCard | null)[]>([null]);
   const [cardsRevealed, setCardsRevealed] = useState(false);
   const [analysisStep, setAnalysisStep] = useState<'TABLE' | 'RESULT'>('TABLE');
   const [zoomedCard, setZoomedCard] = useState<TarotCard | null>(null); 
   const layoutRef = useRef<HTMLDivElement>(null); 
   
-  // Результат
   const [resultText, setResultText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // --- ЭФФЕКТЫ ---
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (link) link.href = ASSETS.img_favicon;
@@ -58,25 +53,16 @@ const App: React.FC = () => {
       document.head.appendChild(metaApple);
     }
     metaApple.setAttribute('content', "yes");
-
     document.body.style.overscrollBehavior = "none";
     document.body.style.backgroundColor = "black";
   }, []);
 
-  // Исправленный автоплей (убрана неиспользуемая переменная error)
   useEffect(() => {
     if (audioUrl && audioRef.current) {
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(() => {
-                console.log("Автоплей заблокирован iPhone. Ждем клика.");
-            });
-        }
+        audioRef.current.play().catch(() => {});
     }
   }, [audioUrl]);
 
-  // --- ФУНКЦИИ ---
-  
   const handleCopyText = () => {
     const cardNames = selectedCards.map(c => c?.name).join(', ');
     const fullText = `🔮 Расклад: ${appMode}\n🃏 Карты: ${cardNames}\n\n${resultText}\n\n👉 Неправильная Психология`;
@@ -86,11 +72,11 @@ const App: React.FC = () => {
 
   const handleDownloadTextFile = () => {
     const cardNames = selectedCards.map(c => c?.name).join(', ');
-    const fullText = `🔮 РАСКЛАД: ${appMode}\n🃏 КАРТЫ: ${cardNames}\n\n📝 ТОЛКОВАНИЕ:\n${resultText}\n\n👉 Неправильная Психология (https://astral-hero.vercel.app)`;
+    const fullText = `🔮 РАСКЛАД: ${appMode}\n🃏 КАРТЫ: ${cardNames}\n\n📝 ТОЛКОВАНИЕ:\n${resultText}\n\n👉 Неправильная Психология`;
     const blob = new Blob([fullText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = `prediction_${new Date().toISOString().slice(0,10)}.txt`;
+    link.download = `prediction.txt`;
     link.href = url;
     link.click();
   };
@@ -109,14 +95,8 @@ const App: React.FC = () => {
 
   const handleShare = async () => {
     if (navigator.share) {
-      try { 
-        await navigator.share({ title: 'Tarot', text: 'Мой расклад', url: window.location.href }); 
-      } catch (e) {
-        console.log(e); // Используем переменную, чтобы линтер не ругался
-      }
-    } else {
-      handleCopyText();
-    }
+      try { await navigator.share({ title: 'Tarot', text: 'Мой расклад', url: window.location.href }); } catch (e) { console.log(e); }
+    } else handleCopyText();
   };
 
   const handleLayoutSelect = (selectedMode: AppMode) => {
@@ -151,53 +131,41 @@ const App: React.FC = () => {
     try {
       const text = await analyzeRelationship(selectedCards as TarotCard[], userProblem, appMode, activeConsultant);
       setResultText(text);
-    } catch (e) { 
-      console.error(e); 
-      setResultText("Ошибка связи. Попробуйте еще раз."); 
-    } finally { 
-      setIsLoading(false); 
-    }
+    } catch (e) { console.error(e); setResultText("Ошибка связи. Попробуйте еще раз."); } finally { setIsLoading(false); }
   };
 
   const handleGenerateAudio = async () => {
     if (!resultText || isGeneratingVoice) return;
     setIsGeneratingVoice(true);
     const cleanText = resultText.replace(/[#*]/g, ''); 
-    
-    try {
-        const url = await speakText(cleanText, consultant, appMode as any); 
-        if (url) {
-            setAudioUrl(url);
-        } else {
-            alert("Голос не сформирован. Повторите.");
-        }
-    } catch (e) {
-        console.error(e);
-        alert("Ошибка озвучки.");
-    } finally {
-        setIsGeneratingVoice(false);
-    }
+    const url = await speakText(cleanText, consultant, appMode as any); 
+    if (url) {
+        setAudioUrl(url);
+    } 
+    setIsGeneratingVoice(false);
   };
 
   const fullReset = () => {
     setIntroStep('HERO'); setScreen('HALLWAY'); setResultText(''); setUserProblem(''); setAudioUrl(null); setConsultant('STANDARD'); setAnalysisStep('TABLE'); setCardsRevealed(false);
   };
 
+  // --- ИСПРАВЛЕНИЕ: КАРТЫ НЕ ОБРЕЗАЮТСЯ ---
   const CardImage = ({ card }: { card: TarotCard | null }) => {
-    if (!cardsRevealed) return <img src={ASSETS.img_cardback} className="w-full h-full object-cover rounded shadow-lg animate-pulse" alt="Cover" />;
+    if (!cardsRevealed) return <img src={ASSETS.img_cardback} className="w-full h-full object-contain rounded shadow-lg animate-pulse" alt="Cover" />;
     return (
       <div className="w-full h-full relative animate-flip-in cursor-zoom-in group" onClick={() => setZoomedCard(card)}>
-        <img src={card?.imageUrl} className="w-full h-full object-cover rounded shadow-lg" alt={card?.name} crossOrigin="anonymous" />
+        {/* object-contain ГАРАНТИРУЕТ, что карта видна целиком */}
+        <img src={card?.imageUrl} className="w-full h-full object-contain drop-shadow-2xl" alt={card?.name} crossOrigin="anonymous" />
       </div>
     );
   };
 
   const RenderLayout = () => {
-    if (appMode === 'BLITZ') return <div className="w-48 max-w-[50%] aspect-[2/3] mx-auto"><CardImage card={selectedCards[0]} /></div>;
-    if (appMode === 'RELATIONSHIPS') return <div className="flex justify-center gap-4 h-full items-center"><div className="w-[45%] max-w-[150px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div><div className="w-[45%] max-w-[150px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div></div>;
-    if (appMode === 'FATE') return <div className="flex justify-center gap-2 h-full items-center"><div className="w-[32%] max-w-[110px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div><div className="w-[32%] max-w-[110px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div><div className="w-[32%] max-w-[110px] aspect-[2/3]"><CardImage card={selectedCards[2]} /></div></div>;
-    if (appMode === 'FINANCE') return <div className="grid grid-cols-2 gap-3 max-w-[200px] mx-auto aspect-square items-center"><CardImage card={selectedCards[0]} /><CardImage card={selectedCards[1]} /><CardImage card={selectedCards[2]} /><CardImage card={selectedCards[3]} /></div>;
-    if (appMode === 'CROSS') return <div className="relative w-full max-w-[220px] aspect-[3/4] mx-auto my-auto"><div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] z-20 shadow-2xl scale-110"><CardImage card={selectedCards[0]} /></div><div className="absolute top-1/2 left-0 -translate-y-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[1]} /></div><div className="absolute top-1/2 right-0 -translate-y-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[2]} /></div><div className="absolute top-0 left-1/2 -translate-x-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[3]} /></div><div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[4]} /></div></div>;
+    if (appMode === 'BLITZ') return <div className="w-full h-full max-w-xs mx-auto p-4"><CardImage card={selectedCards[0]} /></div>;
+    if (appMode === 'RELATIONSHIPS') return <div className="flex justify-center gap-2 h-full items-center px-2"><div className="h-[80%] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div><div className="h-[80%] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div></div>;
+    if (appMode === 'FATE') return <div className="flex justify-center gap-1 h-full items-center px-1"><div className="h-[70%] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div><div className="h-[70%] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div><div className="h-[70%] aspect-[2/3]"><CardImage card={selectedCards[2]} /></div></div>;
+    if (appMode === 'FINANCE') return <div className="grid grid-cols-2 gap-2 h-[80%] aspect-square mx-auto items-center"><CardImage card={selectedCards[0]} /><CardImage card={selectedCards[1]} /><CardImage card={selectedCards[2]} /><CardImage card={selectedCards[3]} /></div>;
+    if (appMode === 'CROSS') return <div className="relative w-full h-full max-w-sm mx-auto p-2"><div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[25%] h-[35%] z-20"><CardImage card={selectedCards[0]} /></div><div className="absolute top-1/2 left-[10%] -translate-y-1/2 w-[22%] h-[30%]"><CardImage card={selectedCards[1]} /></div><div className="absolute top-1/2 right-[10%] -translate-y-1/2 w-[22%] h-[30%]"><CardImage card={selectedCards[2]} /></div><div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[22%] h-[30%]"><CardImage card={selectedCards[3]} /></div><div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-[22%] h-[30%]"><CardImage card={selectedCards[4]} /></div></div>;
     return null;
   };
 
@@ -224,9 +192,24 @@ const App: React.FC = () => {
 
       {screen === 'OFFICE' && (
         <div className="relative z-10 w-full h-full flex flex-col overflow-hidden">
-          <div className="w-full flex justify-between items-center px-4 py-2 bg-black/20 shrink-0 h-10"><button onClick={fullReset} className="text-[10px] text-gray-400 hover:text-[#D4AF37] uppercase tracking-widest flex items-center gap-2"><span>✕</span> Выход</button><div className="text-[9px] text-[#D4AF37]/60 uppercase tracking-widest">{appMode}</div></div>
+          
+          {/* ВЕРХНЯЯ ПАНЕЛЬ С КНОПКОЙ ВЫХОДА (Исправлено для iPhone) */}
+          <div className="w-full flex justify-between items-center px-4 pt-14 pb-2 bg-gradient-to-b from-black to-transparent shrink-0 z-30">
+             <button onClick={fullReset} className="px-4 py-2 bg-red-900/40 border border-red-500/30 rounded-full text-xs text-red-200 uppercase font-bold tracking-widest flex items-center gap-2 hover:bg-red-900/60 transition-colors">
+               <span>✖</span> ЗАВЕРШИТЬ СЕАНС
+             </button>
+             <div className="text-[10px] text-[#D4AF37]/60 uppercase tracking-widest font-bold">{appMode}</div>
+          </div>
+
           <div className="flex-1 flex flex-col min-h-0">
-             <div className={`flex flex-col items-center justify-center transition-all duration-500 ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[62%] min-h-[220px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}><div ref={layoutRef} className="w-full h-full p-2 flex items-center justify-center overflow-hidden">{RenderLayout()}</div></div>
+             
+             {/* ЗОНА КАРТ (object-contain для целых карт) */}
+             <div className={`flex flex-col items-center justify-center transition-all duration-500 ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[55%] min-h-[200px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}>
+               <div ref={layoutRef} className="w-full h-full p-2 flex items-center justify-center overflow-hidden">
+                 {RenderLayout()}
+               </div>
+             </div>
+
              <div className="shrink-0 w-full flex justify-center items-center py-2 bg-gradient-to-t from-black via-black/50 to-transparent z-20">
                 {!cardsRevealed && analysisStep === 'TABLE' && <button onClick={handleRevealCards} className="px-6 py-3 bg-[#D4AF37] text-black font-bold uppercase tracking-widest rounded-full shadow-lg animate-pulse">Вскрыть</button>}
                 {cardsRevealed && analysisStep === 'TABLE' && <button onClick={handleGetInterpretation} className={`px-6 py-3 font-bold uppercase tracking-widest rounded-full shadow-lg border border-white/20 ${consultant === 'VIP' ? 'bg-gradient-to-r from-[#FFD700] to-black text-[#FFD700]' : 'bg-gradient-to-r from-[#D4AF37] to-black text-[#D4AF37]'}`}>{consultant === 'VIP' ? 'Слово Мессира' : 'Мнение Марго'}</button>}
@@ -247,7 +230,7 @@ const App: React.FC = () => {
                       <div className="w-full">
                          {!audioUrl ? (
                            <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className={`w-full py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${consultant === 'VIP' ? 'bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/40' : 'bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40'}`}>
-                             {isGeneratingVoice ? '⏳ Загрузка...' : `🎧 Голос ${consultant === 'VIP' ? 'Мессира' : 'Марго'}`}
+                             {isGeneratingVoice ? '⏳ Загрузка...' : `🎧 ЗАГРУЗИТЬ ГОЛОС ${consultant === 'VIP' ? 'МЕССИРА' : 'МАРГО'}`}
                            </button>
                          ) : (
                            <div className="bg-[#E0E0E0] rounded-lg p-1 flex justify-center shadow-inner">
@@ -257,7 +240,7 @@ const App: React.FC = () => {
                       </div>
                    </div>
 
-                   <div className="flex-1 overflow-y-auto p-6 text-lg text-gray-300 leading-relaxed font-serif pb-20">
+                   <div className="flex-1 overflow-y-auto p-6 text-xl leading-loose text-gray-300 font-serif pb-20">
                       {isLoading ? (
                          <div className="flex flex-col items-center justify-center h-full gap-2"><div className="w-6 h-6 border-2 border-dashed border-[#D4AF37] rounded-full animate-spin"></div><span className="text-xs text-[#D4AF37]">Связь...</span></div>
                       ) : (
