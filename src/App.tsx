@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import html2canvas from 'html2canvas'; // ⚠️ Нужно установить: npm install html2canvas
+import html2canvas from 'html2canvas'; 
 import { cards } from './data/tarotData';
 import { TarotCard, AppMode } from './types';
 import { analyzeRelationship } from './services/geminiService';
@@ -9,15 +9,16 @@ type IntroStep = 'HERO' | 'LAYOUT' | 'INPUT' | 'TRANSITION';
 type ConsultantType = 'STANDARD' | 'VIP';
 type Screen = 'HALLWAY' | 'OFFICE'; 
 
+// --- АССЕТЫ (Добавил ?v=2 чтобы сбросить кэш и подтянуть новые видео) ---
 const ASSETS = {
-  vid_partners: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/partners.mp4",
-  vid_table: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/table.mp4",
+  vid_partners: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/partners.mp4?v=2",
+  vid_table: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/table.mp4?v=2",
   img_cardback: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/rubashka.png",
   img_favicon: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/favicon.png"
 };
 
 const LINKS = {
-  MASTER: "https://t.me/maratbikchurin",
+  MASTER: "https://t.me/marataitester", // Поменял на ваш контакт
   COMMUNITY: "#",
   SHARE: "#"
 };
@@ -35,7 +36,7 @@ const App: React.FC = () => {
   const [selectedCards, setSelectedCards] = useState<(TarotCard | null)[]>([null]);
   const [cardsRevealed, setCardsRevealed] = useState(false);
   const [analysisStep, setAnalysisStep] = useState<'TABLE' | 'RESULT'>('TABLE');
-  const layoutRef = useRef<HTMLDivElement>(null); // Ссылка для скриншота
+  const layoutRef = useRef<HTMLDivElement>(null); 
   
   // Результат
   const [resultText, setResultText] = useState('');
@@ -50,24 +51,21 @@ const App: React.FC = () => {
     document.title = "Неправильная Психология";
   }, []);
 
-  // --- УТИЛИТЫ: КОПИРОВАНИЕ И СКАЧИВАНИЕ ---
-  
-  // 1. Копирование текста
+  // --- УТИЛИТЫ ---
   const handleCopyText = () => {
     const cardNames = selectedCards.map(c => c?.name).join(', ');
     const fullText = `🔮 Расклад: ${appMode}\n🃏 Карты: ${cardNames}\n\n${resultText}\n\n👉 Неправильная Психология`;
     navigator.clipboard.writeText(fullText);
-    alert("Текст скопирован в буфер!");
+    alert("Текст скопирован!");
   };
 
-  // 2. Скачивание картинки (Скриншот расклада)
   const handleDownloadImage = async () => {
     if (layoutRef.current) {
       try {
         const canvas = await html2canvas(layoutRef.current, {
-          useCORS: true, // Важно для картинок с CDN
-          backgroundColor: null, // Прозрачный фон
-          scale: 2 // Высокое качество
+          useCORS: true, 
+          backgroundColor: null, 
+          scale: 2 
         });
         const link = document.createElement('a');
         link.download = `tarot-${appMode.toLowerCase()}.png`;
@@ -75,25 +73,24 @@ const App: React.FC = () => {
         link.click();
       } catch (err) {
         console.error("Ошибка скриншота:", err);
-        alert("Не удалось сохранить фото. Попробуйте сделать скриншот вручную.");
+        alert("Не удалось сохранить фото.");
       }
     }
   };
 
-  // 3. Поделиться (Нативный мобильный шеринг)
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
           title: 'Мой расклад Tarot',
-          text: `Мне выпало: ${selectedCards.map(c => c?.name).join(', ')}. Узнай свою судьбу:`,
+          text: `Мне выпало: ${selectedCards.map(c => c?.name).join(', ')}.`,
           url: window.location.href,
         });
       } catch (error) {
         console.log('Error sharing', error);
       }
     } else {
-      handleCopyText(); // Если шеринг не поддерживается, просто копируем
+      handleCopyText();
     }
   };
 
@@ -104,9 +101,10 @@ const App: React.FC = () => {
     return true;
   };
 
+  // Исправленная оплата (без алерта)
   const handlePay = () => {
-    alert("Переход к оплате...");
     setShowPaywall(false);
+    // Сразу открываем доступ (имитация)
   };
 
   const handleLayoutSelect = (selectedMode: AppMode) => {
@@ -179,7 +177,7 @@ const App: React.FC = () => {
     setConsultant('STANDARD');
   };
 
-  // --- КОМПОНЕНТЫ ОТРИСОВКИ ---
+  // --- КОМПОНЕНТЫ ---
   const CardImage = ({ card }: { card: TarotCard | null }) => {
     if (!cardsRevealed) return <img src={ASSETS.img_cardback} className="w-full h-full object-cover rounded shadow-lg animate-pulse" alt="Cover" />;
     return (
@@ -215,7 +213,9 @@ const App: React.FC = () => {
               <button onClick={() => setShowPaywall(false)} className="absolute top-2 right-4 text-2xl text-gray-500 hover:text-white">×</button>
               <h3 className="text-xl text-[#D4AF37] font-cinzel font-bold mb-2">ДОСТУП ЗАКРЫТ</h3>
               <p className="text-gray-300 text-sm mb-6">{consultant === 'VIP' ? 'Мессир требует оплаты.' : 'Глубокий расклад платный.'}</p>
-              <button onClick={handlePay} className="w-full py-4 bg-gradient-to-r from-[#D4AF37] to-[#FFD700] text-black font-bold uppercase tracking-widest rounded">Оплатить (Тест)</button>
+              <button onClick={handlePay} className="w-full py-4 bg-gradient-to-r from-[#D4AF37] to-[#FFD700] text-black font-bold uppercase tracking-widest rounded shadow-lg hover:scale-[1.02] transition-transform">
+                ОПЛАТИТЬ ДОСТУП
+              </button>
            </div>
         </div>
       )}
@@ -232,29 +232,41 @@ const App: React.FC = () => {
 
       <div className="relative z-10 flex-grow flex flex-col items-center min-h-screen w-full">
         {screen === 'HALLWAY' && (
-          <div className="w-full h-screen flex flex-col justify-between py-6 px-4">
+          <div className="w-full h-screen flex flex-col justify-end py-6 px-4">
+            
+            {/* ГЛАВНЫЙ ЭКРАН (TITLE ВНИЗУ) */}
             {introStep === 'HERO' && (
-              <>
-                <div className="mt-10 text-center animate-fade-in">
-                  <h1 className="text-4xl md:text-6xl font-bold text-[#D4AF37] font-cinzel drop-shadow-lg tracking-widest">PSY TAROT</h1>
-                  <p className="text-[10px] md:text-xs uppercase tracking-[0.4em] opacity-80 mt-2">Неправильная психология</p>
+              <div className="flex flex-col items-center w-full animate-fade-in gap-6">
+                
+                {/* КНОПКИ ГЕРОЕВ (Теперь выше заголовка) */}
+                <div className="flex gap-4 md:gap-12 mb-4">
+                    <button onClick={() => { setConsultant('VIP'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#FFD700]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#FFD700] hover:text-black transition-all flex flex-col items-center gap-1 group shadow-[0_0_20px_rgba(255,215,0,0.2)]">
+                        <span className="text-xl">🦁</span><span className="text-[#FFD700] group-hover:text-black font-bold text-xs tracking-widest uppercase">МЕССИР</span>
+                    </button>
+                    <button onClick={() => { setConsultant('STANDARD'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#D4AF37]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#D4AF37] hover:text-black transition-all flex flex-col items-center gap-1 group shadow-[0_0_20px_rgba(212,175,55,0.2)]">
+                        <span className="text-xl">🦊</span><span className="text-[#D4AF37] group-hover:text-black font-bold text-xs tracking-widest uppercase">МАРГО</span>
+                    </button>
                 </div>
-                <div className="flex-grow flex items-end justify-center pb-20 animate-fade-in">
-                   <div className="flex gap-4 md:gap-12">
-                      <button onClick={() => { setConsultant('VIP'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#FFD700]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#FFD700] hover:text-black transition-all flex flex-col items-center gap-1 group">
-                         <span className="text-lg">🦁</span><span className="text-[#FFD700] group-hover:text-black font-bold text-xs tracking-widest uppercase">МЕССИР</span>
-                      </button>
-                      <button onClick={() => { setConsultant('STANDARD'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#D4AF37]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#D4AF37] hover:text-black transition-all flex flex-col items-center gap-1 group">
-                         <span className="text-lg">🦊</span><span className="text-[#D4AF37] group-hover:text-black font-bold text-xs tracking-widest uppercase">МАРГО</span>
-                      </button>
-                   </div>
+
+                {/* ЗАГОЛОВОК (Смещен вниз) */}
+                <div className="text-center mb-6">
+                  <h1 className="text-3xl md:text-5xl font-bold text-[#D4AF37] font-cinzel drop-shadow-lg tracking-widest">PSY TAROT</h1>
+                  <p className="text-[10px] md:text-xs uppercase tracking-[0.4em] opacity-80 mt-1">Неправильная психология</p>
                 </div>
-                <div className="absolute bottom-6 left-0 w-full flex justify-center gap-6 animate-fade-in">
-                   <a href={LINKS.MASTER} className="text-[10px] text-gray-400 hover:text-[#D4AF37] uppercase tracking-widest">Мастер</a>
-                   <a href={LINKS.COMMUNITY} className="text-[10px] text-gray-400 hover:text-[#D4AF37] uppercase tracking-widest">Комьюнити</a>
-                   <button onClick={() => setShowPaywall(true)} className="text-[10px] text-gray-400 hover:text-[#D4AF37] uppercase tracking-widest">Оплата</button>
+
+                {/* ФУТЕР (КНОПКИ СВЯЗИ - СТАЛИ ЗАМЕТНЕЕ) */}
+                <div className="w-full flex flex-wrap justify-center gap-3">
+                   <a href={LINKS.MASTER} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/40 rounded-full text-[10px] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black uppercase tracking-widest transition-all shadow-lg font-bold">
+                     Связь с Мастером
+                   </a>
+                   <a href={LINKS.COMMUNITY} className="px-4 py-2 bg-white/5 border border-white/20 rounded-full text-[10px] text-gray-300 hover:bg-white/20 hover:text-white uppercase tracking-widest transition-all shadow-lg">
+                     Комьюнити
+                   </a>
+                   <button onClick={() => setShowPaywall(true)} className="px-4 py-2 bg-gradient-to-r from-[#D4AF37]/20 to-[#FFD700]/20 border border-[#D4AF37]/40 rounded-full text-[10px] text-[#FFD700] hover:scale-105 uppercase tracking-widest transition-all shadow-lg font-bold">
+                     💳 Оплата
+                   </button>
                 </div>
-              </>
+              </div>
             )}
 
             {introStep === 'LAYOUT' && (
@@ -325,23 +337,4 @@ const App: React.FC = () => {
                      </div>
                      <div className="p-6 overflow-y-auto text-sm text-gray-300 leading-relaxed font-serif relative">
                         {isLoading ? (
-                           <div className="flex flex-col items-center justify-center h-20 gap-2"><div className="w-8 h-8 border-2 border-dashed border-[#D4AF37] rounded-full animate-spin"></div><span className="text-xs text-[#D4AF37] animate-pulse">Чтение знаков...</span></div>
-                        ) : resultText}
-                        {!isLoading && resultText && (
-                           <div className="mt-8 pt-6 border-t border-[#333] text-center">
-                              <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Хотите другой взгляд?</p>
-                              <button onClick={handleSecondOpinion} className={`w-full py-3 border border-dashed rounded transition-colors text-xs uppercase font-bold tracking-widest flex items-center justify-center gap-2 ${consultant === 'VIP' ? 'border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/10' : 'border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700]/10'}`}>{consultant === 'VIP' ? '🦊 Спросить Марго' : '🦁 Мнение Мессира'}</button>
-                           </div>
-                        )}
-                     </div>
-                  </div>
-               )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default App;
+                           <div className="flex flex-col items-center justify-center h-20 gap-2"><div className="w-8 h-8 border
