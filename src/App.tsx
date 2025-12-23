@@ -392,6 +392,7 @@ const App: React.FC = () => {
                         <div className="flex gap-4 items-center">
                            <button onClick={handleCopyText} className="text-gray-400 hover:text-white text-lg" title="Копировать">📋</button>
                            <button onClick={handleDownloadImage} className="text-gray-400 hover:text-white text-lg" title="Фото">📸</button>
+                           <button onClick={handleShare} className="text-gray-400 hover:text-white text-lg" title="Поделиться">🔗</button>
                            {!audioUrl ? (
                              <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className="text-gray-400 hover:text-white text-lg">
                                {isGeneratingVoice ? '⏳' : '🔊'}
