@@ -10,8 +10,8 @@ type ConsultantType = 'STANDARD' | 'VIP';
 type Screen = 'HALLWAY' | 'OFFICE'; 
 
 const ASSETS = {
-  vid_partners: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/partners.mp4?v=2",
-  vid_table: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/table.mp4?v=2",
+  vid_partners: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/partners.mp4?v=3",
+  vid_table: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/table.mp4?v=3",
   img_cardback: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/rubashka.png",
   img_favicon: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/favicon.png"
 };
@@ -46,29 +46,12 @@ const App: React.FC = () => {
 
   // --- НАСТРОЙКИ ---
   useEffect(() => {
-    const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-    if (link) link.href = ASSETS.img_favicon;
+    // Дублируем настройки PWA через JS для надежности
     document.title = "Неправильная Психология";
-
-    // Мета-теги для PWA (iPhone)
-    let metaApple = document.querySelector("meta[name='apple-mobile-web-app-capable']");
-    if (!metaApple) {
-      metaApple = document.createElement('meta');
-      metaApple.setAttribute('name', "apple-mobile-web-app-capable");
-      document.head.appendChild(metaApple);
+    const metaViewport = document.querySelector("meta[name='viewport']");
+    if (metaViewport) {
+       metaViewport.setAttribute('content', "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover");
     }
-    metaApple.setAttribute('content', "yes");
-
-    let metaStatus = document.querySelector("meta[name='apple-mobile-web-app-status-bar-style']");
-    if (!metaStatus) {
-      metaStatus = document.createElement('meta');
-      metaStatus.setAttribute('name', "apple-mobile-web-app-status-bar-style");
-      document.head.appendChild(metaStatus);
-    }
-    metaStatus.setAttribute('content', "black-translucent");
-
-    document.body.style.overscrollBehavior = "none";
-    document.body.style.backgroundColor = "black";
   }, []);
 
   // --- ФУНКЦИИ ---
@@ -268,7 +251,7 @@ const App: React.FC = () => {
       </div>
 
       <div className={`fixed inset-0 z-0 transition-opacity duration-1000 ${screen === 'OFFICE' ? 'opacity-100' : 'opacity-0'}`}>
-         {screen === 'OFFICE' && <video src={ASSETS.vid_table} autoPlay loop muted playsInline className="w-full h-full object-cover" />}
+         {screen === 'OFFICE' && <video src={ASSETS.vid_table} autoPlay loop muted playsInline className="w-full h-full object-cover" /> }
          <div className="absolute inset-0 bg-black/60"></div> 
       </div>
 
@@ -327,7 +310,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* --- ЭКРАН 2: КАБИНЕТ (OFFICE) --- */}
+      {/* --- OFFICE --- */}
       {screen === 'OFFICE' && (
         <div className="relative z-10 w-full h-full flex flex-col overflow-hidden">
           
@@ -340,16 +323,16 @@ const App: React.FC = () => {
 
           <div className="flex-1 flex flex-col min-h-0">
              
-             {/* КАРТЫ (Увеличена зона до 62% для смещения текста вниз) */}
+             {/* 1. КАРТЫ (65% высоты при результате = сдвиг текста вниз) */}
              <div className={`flex flex-col items-center justify-center transition-all duration-500 
-                ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[62%] min-h-[220px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}>
+                ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[65%] min-h-[220px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}>
                 
                 <div ref={layoutRef} className="w-full h-full p-2 flex items-center justify-center overflow-hidden">
                    {RenderLayout()}
                 </div>
              </div>
 
-             {/* ПАНЕЛЬ КНОПОК */}
+             {/* 2. ПАНЕЛЬ УПРАВЛЕНИЯ */}
              <div className="shrink-0 w-full flex justify-center items-center py-2 bg-gradient-to-t from-black via-black/50 to-transparent z-20">
                 {!cardsRevealed && analysisStep === 'TABLE' && (
                    <button onClick={handleRevealCards} className="px-6 py-3 bg-[#D4AF37] text-black font-bold uppercase tracking-widest rounded-full shadow-lg animate-pulse">
@@ -364,7 +347,7 @@ const App: React.FC = () => {
                 )}
              </div>
 
-             {/* ТЕКСТ (RESULT) */}
+             {/* 3. ТЕКСТ (Занимает оставшиеся 35%) */}
              {analysisStep === 'RESULT' && (
                 <div className="flex-1 flex flex-col bg-[#050505]/95 min-h-0 border-t border-[#333]">
                    
@@ -378,12 +361,16 @@ const App: React.FC = () => {
                       <div className="flex items-center gap-2">
                          <button onClick={handleDownloadImage} className="text-gray-400 p-2">📸</button>
                          <button onClick={handleShare} className="text-gray-400 p-2">🔗</button>
+                         
+                         {/* ПЛЕЕР С БЕЛОЙ ПОДЛОЖКОЙ ДЛЯ КОНТРАСТА */}
                          {!audioUrl ? (
                            <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className="text-gray-400 text-lg p-2">
                              {isGeneratingVoice ? '...' : '🔊'}
                            </button>
                          ) : (
-                           <audio controls playsInline src={audioUrl} className="h-8 w-28 md:w-40" />
+                           <div className="bg-white/20 rounded px-2 py-1 flex items-center">
+                              <audio controls playsInline src={audioUrl} className="h-8 w-28 md:w-40" />
+                           </div>
                          )}
                       </div>
                    </div>
