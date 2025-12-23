@@ -1,51 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cards } from './data/tarotData';
 import { TarotCard, AppMode } from './types';
 import { analyzeRelationship } from './services/geminiService';
 import { speakText } from './services/ttsService';
 
+// Типы этапов входа (Step-by-Step)
+type IntroStep = 'HERO' | 'LAYOUT' | 'INPUT' | 'TRANSITION';
 type ConsultantType = 'STANDARD' | 'VIP';
-type Screen = 'DOOR' | 'HALLWAY' | 'OFFICE'; 
+type Screen = 'HALLWAY' | 'OFFICE'; 
 
-// --- АССЕТЫ ---
 const ASSETS = {
   vid_partners: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/partners.mp4",
   vid_table: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/table.mp4",
-  img_hallway: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/hallway.jpg",
-  img_doorbell: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/doorbell.png",
   img_cardback: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/rubashka.png",
   img_favicon: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/favicon.png"
 };
 
-const LINKS = {
-  MASTER: "#", COMMUNITY: "#", PAYMENT: "#", SHARE: "#"
-};
-
 const App: React.FC = () => {
-  const [screen, setScreen] = useState<Screen>('DOOR');
+  // Основные состояния
+  const [screen, setScreen] = useState<Screen>('HALLWAY');
+  const [introStep, setIntroStep] = useState<IntroStep>('HERO');
+  
+  // Данные сеанса
   const [consultant, setConsultant] = useState<ConsultantType>('STANDARD');
   const [appMode, setAppMode] = useState<AppMode>('RELATIONSHIPS');
-  
-  // Логика
-  const [step, setStep] = useState<'INTAKE' | 'SELECTION' | 'ANALYSIS'>('INTAKE');
-  const [mode, setMode] = useState<'RANDOM' | 'MANUAL'>('RANDOM');
   const [userProblem, setUserProblem] = useState('');
-  const [selectedCards, setSelectedCards] = useState<(TarotCard | null)[]>([null, null, null, null, null]);
   
-  // Результат и Аудио
+  // Логика расклада
+  const [selectedCards, setSelectedCards] = useState<(TarotCard | null)[]>([null, null, null, null, null]);
+  const [analysisStep, setAnalysisStep] = useState<'SELECTION' | 'ANALYSIS'>('SELECTION');
+  const [mode, setMode] = useState<'RANDOM' | 'MANUAL'>('RANDOM');
+  
+  // Результаты
   const [resultText, setResultText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-
-  // --- СЦЕНАРИЙ ПРИХОЖЕЙ ---
-  const videoHallwayRef = useRef<HTMLVideoElement>(null);
-  const [hallwayPhase, setHallwayPhase] = useState<'FREEZE' | 'ACTION' | 'INTERACTIVE'>('FREEZE');
-  const [showMargoBtn, setShowMargoBtn] = useState(false);
-  const [showMessireBtn, setShowMessireBtn] = useState(false);
-  
-  // Визуальные заглушки для отладки звука
-  const [audioStubLabel, setAudioStubLabel] = useState('');
 
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
@@ -53,79 +43,52 @@ const App: React.FC = () => {
     document.title = "Неправильная Психология";
   }, []);
 
-  // --- ЛОГИКА СЦЕНЫ ПРИХОЖЕЙ (Video Logic) ---
-  useEffect(() => {
-    if (screen === 'HALLWAY') {
-      // Сброс состояний при входе
-      setHallwayPhase('FREEZE');
-      setShowMargoBtn(false);
-      setShowMessireBtn(false);
-      setAudioStubLabel('');
+  // --- ЛОГИКА ШАГОВ (STEP-BY-STEP) ---
 
-      // 1. СТАРТ: СТОП-КАДР (0 сек)
-      if (videoHallwayRef.current) {
-        videoHallwayRef.current.pause();
-        videoHallwayRef.current.currentTime = 0;
-      }
-      console.log("🔊 AUDIO STUB: Голос Копеляна - 'Информация к размышлению...'");
-      setAudioStubLabel("🔊 Копелян: Вступление...");
-
-      // 2. ОЖИВЛЕНИЕ (через 5 сек)
-      const timerAction = setTimeout(() => {
-        setHallwayPhase('ACTION');
-        if (videoHallwayRef.current) videoHallwayRef.current.play();
-        console.log("🔊 AUDIO STUB: Досье на героев");
-        setAudioStubLabel("🔊 Копелян: Досье на Марго и Мессира...");
-      }, 5000);
-
-      // 3. ПОЯВЛЕНИЕ МАРГО (через 12 сек)
-      const timerMargo = setTimeout(() => {
-        setShowMargoBtn(true);
-      }, 12000);
-
-      // 4. ПОЯВЛЕНИЕ МЕССИРА (через 13 сек - последовательно)
-      const timerMessire = setTimeout(() => {
-        setShowMessireBtn(true);
-        setHallwayPhase('INTERACTIVE');
-        setAudioStubLabel("🔊 Копелян: Выбор за вами.");
-      }, 13000);
-
-      return () => {
-        clearTimeout(timerAction);
-        clearTimeout(timerMargo);
-        clearTimeout(timerMessire);
-      };
-    }
-  }, [screen]);
-
-  // --- НАВИГАЦИЯ ---
-  const enterDoor = () => {
-    setScreen('HALLWAY');
-  };
-
-  const enterAs = (type: ConsultantType) => {
+  // Шаг 1: Выбор Героя -> Переход к Раскладам
+  const handleHeroSelect = (type: ConsultantType) => {
     setConsultant(type);
-    handleEnterOffice('BLITZ'); 
+    setIntroStep('LAYOUT');
   };
 
-  const handleEnterOffice = (selectedMode: AppMode) => {
+  // Шаг 2: Выбор Расклада -> Переход к Вводу
+  const handleLayoutSelect = (selectedMode: AppMode) => {
     setAppMode(selectedMode);
+    
+    // Подготовка слотов для карт
     const countMap: Record<AppMode, number> = {
         'BLITZ': 1, 'RELATIONSHIPS': 2, 'FATE': 3, 'FINANCE': 4, 'CROSS': 5
     };
     setSelectedCards(new Array(countMap[selectedMode]).fill(null));
-    setScreen('OFFICE');
+    
+    setIntroStep('INPUT');
   };
 
+  // Шаг 3: Ввод вопроса -> ZOOM -> Кабинет
+  const handleStartSession = () => {
+    // 1. Запускаем анимацию перехода (Zoom)
+    setIntroStep('TRANSITION');
+    
+    // 2. Ждем окончания анимации и переключаем экран
+    setTimeout(() => {
+      setScreen('OFFICE');
+      setAnalysisStep('SELECTION');
+      // Если режим RANDOM, можно сразу раздать карты (опционально)
+      // handleShuffle(); 
+    }, 1500); // 1.5 секунды на зум
+  };
+
+  // Возврат назад (Сброс)
   const fullReset = () => {
-    setStep('INTAKE');
+    setIntroStep('HERO');
+    setScreen('HALLWAY');
     setResultText('');
     setUserProblem('');
     setAudioUrl(null);
-    setScreen('DOOR');
   };
 
-  const handleStart = () => {
+  // --- ЛОГИКА КАБИНЕТА ---
+  const handleShuffle = () => {
     const count = selectedCards.length;
     let newCards = new Array(count).fill(null);
     if (mode === 'RANDOM') {
@@ -133,12 +96,11 @@ const App: React.FC = () => {
       newCards = shuffled.slice(0, count);
     }
     setSelectedCards(newCards);
-    setStep('SELECTION');
   };
 
   const runDiagnosis = async () => {
     if (selectedCards.some(c => c === null)) return;
-    setStep('ANALYSIS');
+    setAnalysisStep('ANALYSIS');
     setIsLoading(true);
     setResultText(''); setAudioUrl(null);
 
@@ -146,7 +108,7 @@ const App: React.FC = () => {
       const text = await analyzeRelationship(selectedCards as TarotCard[], userProblem, appMode, consultant);
       setResultText(text);
     } catch (e) {
-      setResultText("Астрал недоступен.");
+      setResultText("Астрал перегружен. Попробуйте позже.");
     } finally {
       setIsLoading(false);
     }
@@ -161,11 +123,11 @@ const App: React.FC = () => {
     setIsGeneratingVoice(false);
   };
 
-  // --- РЕНДЕР ---
+  // --- РЕНДЕР КАРТ ---
   const renderCardMedia = (card: TarotCard | null) => {
     if (!card) {
        if (mode === 'RANDOM') return <img src={ASSETS.img_cardback} className="w-full h-full object-cover rounded-lg" />;
-       return <div className="w-full h-full bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-[10px] text-gray-500 text-center p-1">Карта</div>;
+       return <div className="w-full h-full bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-[10px] text-gray-500 text-center p-1">?</div>;
     }
     return <img src={card.imageUrl} className="w-full h-full object-cover rounded-lg" />;
   };
@@ -216,181 +178,199 @@ const App: React.FC = () => {
     );
   };
 
+  // --- UI КОМПОНЕНТЫ ---
   return (
     <div className="min-h-screen font-serif flex flex-col relative overflow-hidden text-[#E0E0E0] selection:bg-[#D4AF37] selection:text-black">
       
-      {/* 1. ФОН ДВЕРИ */}
-      {screen === 'DOOR' && (
-        <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url('${ASSETS.img_hallway}')` }}>
-           <div className="absolute inset-0 bg-black/70"></div>
-        </div>
-      )}
+      {/* 1. ГЛОБАЛЬНЫЙ ФОН (HALLWAY) с эффектом ZOOM */}
+      <div 
+        className={`fixed inset-0 z-0 transition-all duration-[1500ms] ease-in-out
+          ${screen === 'HALLWAY' ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+          ${introStep === 'TRANSITION' ? 'scale-[2.5] blur-sm' : 'scale-100'} 
+        `}
+      >
+         <video src={ASSETS.vid_partners} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+         <div className={`absolute inset-0 bg-black/40 transition-colors duration-1000 ${introStep === 'INPUT' ? 'bg-black/70' : ''}`}></div>
+      </div>
 
-      {/* 2. ФОН ПРИХОЖЕЙ (Видео с логикой) */}
-      {screen === 'HALLWAY' && (
-        <div className="fixed inset-0 z-0">
-          {/* Убрали autoPlay, управляем через ref */}
-          <video 
-            ref={videoHallwayRef}
-            src={ASSETS.vid_partners} 
-            loop muted playsInline 
-            className="w-full h-full object-cover" 
-          />
-          <div className={`absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 transition-opacity duration-1000 ${hallwayPhase === 'FREEZE' ? 'opacity-80' : 'opacity-100'}`}></div>
-          
-          {/* Эффект старого кино / Стоп-кадр */}
-          {hallwayPhase === 'FREEZE' && <div className="absolute inset-0 bg-sepia opacity-20 pointer-events-none"></div>}
-        </div>
-      )}
+      {/* 2. ФОН КАБИНЕТА (OFFICE) */}
+      <div className={`fixed inset-0 z-0 transition-opacity duration-1000 ${screen === 'OFFICE' ? 'opacity-100' : 'opacity-0'}`}>
+         {screen === 'OFFICE' && <video src={ASSETS.vid_table} autoPlay loop muted playsInline className="w-full h-full object-cover" />}
+         <div className="absolute inset-0 bg-black/60"></div> 
+      </div>
 
-      {/* 3. ФОН КАБИНЕТА */}
-      {screen === 'OFFICE' && (
-        <div className="fixed inset-0 z-0">
-           <video src={ASSETS.vid_table} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-           <div className="absolute inset-0 bg-black/50"></div>
-        </div>
-      )}
-
-      {/* КОНТЕНТ */}
-      <div className="relative z-10 flex-grow flex flex-col items-center min-h-screen">
+      {/* --- ИНТЕРФЕЙС (STEP-BY-STEP) --- */}
+      <div className="relative z-10 flex-grow flex flex-col items-center min-h-screen w-full">
         
-        {/* === ЭКРАН 1: ДВЕРЬ === */}
-        {screen === 'DOOR' && (
-          <div className="w-full h-screen flex flex-col items-center justify-between py-8 px-6 animate-fade-in text-center">
-             <div className="mt-6 flex flex-col gap-2">
-                <h1 className="text-2xl md:text-4xl font-bold text-[#D4AF37] font-cinzel tracking-wider drop-shadow-lg">
-                  НЕПРАВИЛЬНАЯ ПСИХОЛОГИЯ
-                </h1>
-                <p className="text-lg md:text-xl text-gray-300 font-cinzel uppercase tracking-[0.3em] border-t border-[#D4AF37]/30 pt-2 inline-block mx-auto">
-                  PSY ТАРО
-                </p>
-             </div>
-
-             <div className="flex flex-col items-center gap-8">
-                <div onClick={enterDoor} className="group relative cursor-pointer w-40 h-40 md:w-56 md:h-56">
-                   <div className="absolute inset-0 bg-[#FFD700] rounded-full blur-[40px] opacity-10 group-hover:opacity-30 transition-opacity duration-700 animate-pulse"></div>
-                   <img src={ASSETS.img_doorbell} alt="Звонок" className="w-full h-full object-cover rounded-full border-2 border-[#D4AF37]/40 shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-transform duration-300 group-hover:scale-105 active:scale-95" />
-                </div>
-                <div onClick={enterDoor} className="text-sm md:text-base text-[#D4AF37] font-bold uppercase tracking-[0.2em] cursor-pointer hover:text-white transition-colors border-b border-dashed border-[#D4AF37]/50 pb-1">
-                  ЗВОНИТЬ НЕПРАВИЛЬНЫМ ПСИХОЛОГАМ
-                </div>
-                {/* Кнопка рекламного сценария */}
-                <button className="flex items-center gap-2 px-6 py-3 rounded-full border border-[#D4AF37]/30 bg-black/40 backdrop-blur-md text-gray-400 text-[10px] uppercase tracking-widest font-bold">
-                  <span>🔇</span> Озвучка (Вкл)
-                </button>
-             </div>
-
-             <div className="w-full flex justify-center gap-6 md:gap-10 border-t border-[#333] pt-6 mt-4">
-                <a href={LINKS.MASTER} className="text-[10px] text-gray-500 hover:text-[#D4AF37] uppercase tracking-widest">Мастер</a>
-                <a href={LINKS.COMMUNITY} className="text-[10px] text-gray-500 hover:text-[#D4AF37] uppercase tracking-widest">Комьюнити</a>
-                <a href={LINKS.PAYMENT} className="text-[10px] text-gray-500 hover:text-[#D4AF37] uppercase tracking-widest">Оплата</a>
-                <a href={LINKS.SHARE} className="text-[10px] text-gray-500 hover:text-[#D4AF37] uppercase tracking-widest">Поделиться</a>
-             </div>
-          </div>
-        )}
-
-        {/* === ЭКРАН 2: ПРИХОЖАЯ (СЦЕНА) === */}
+        {/* --- СЦЕНА 1: ПРИХОЖАЯ --- */}
         {screen === 'HALLWAY' && (
-          <div className="w-full h-screen flex flex-col justify-end pb-20 p-6">
-             
-             {/* Отладочная строка аудио */}
-             {audioStubLabel && (
-                <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-2 rounded text-[#FFD700] text-xs animate-pulse whitespace-nowrap">
-                   {audioStubLabel}
-                </div>
-             )}
+          <div className="w-full h-screen flex flex-col items-center justify-between py-10 px-6">
+            
+            {/* ШАГ 1: ВЫБОР ГЕРОЯ (НИЗ ЭКРАНА) */}
+            {introStep === 'HERO' && (
+              <div className="flex-grow flex flex-col justify-end w-full max-w-4xl pb-10 animate-fade-in">
+                 <div className="text-center mb-8">
+                    <h1 className="text-3xl md:text-5xl font-bold text-[#D4AF37] font-cinzel drop-shadow-lg tracking-widest">
+                      PSY TAROT
+                    </h1>
+                    <p className="text-xs uppercase tracking-[0.4em] opacity-70 mt-2">Неправильная психология</p>
+                 </div>
 
-             {/* Заголовок выбора (Появляется в конце) */}
-             <div className={`absolute top-32 left-0 w-full text-center transition-opacity duration-1000 ${hallwayPhase === 'INTERACTIVE' ? 'opacity-100' : 'opacity-0'}`}>
-               <h2 className="text-xl text-[#D4AF37] font-cinzel tracking-[0.2em] bg-black/30 backdrop-blur-sm inline-block px-6 py-2 rounded-full border border-white/5">
-                 К КОМУ ЗАЙДЕМ?
-               </h2>
-             </div>
+                 <div className="flex items-center justify-between w-full">
+                    {/* Кнопка Мессир */}
+                    <div onClick={() => handleHeroSelect('VIP')} className="group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95">
+                       <div className="px-6 py-4 border border-[#FFD700]/50 bg-black/60 backdrop-blur-md rounded-lg group-hover:bg-[#FFD700] transition-colors shadow-[0_0_20px_rgba(255,215,0,0.2)]">
+                          <span className="text-[#FFD700] group-hover:text-black font-bold text-xs tracking-widest uppercase">МЕССИР</span>
+                       </div>
+                    </div>
+                    
+                    {/* Кнопка Марго */}
+                    <div onClick={() => handleHeroSelect('STANDARD')} className="group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95">
+                       <div className="px-6 py-4 border border-[#D4AF37]/50 bg-black/60 backdrop-blur-md rounded-lg group-hover:bg-[#D4AF37] transition-colors shadow-[0_0_20px_rgba(212,175,55,0.2)]">
+                          <span className="text-[#D4AF37] group-hover:text-black font-bold text-xs tracking-widest uppercase">МАРГО</span>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+            )}
 
-             {/* Кнопки (Последовательное появление) */}
-             <div className="flex items-center justify-between w-full max-w-4xl mx-auto px-2">
-                
-                {/* Кнопка МЕССИР (Слева) */}
-                <div className={`flex flex-col items-center gap-6 group cursor-pointer transition-all duration-1000 transform ${showMessireBtn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} onClick={() => enterAs('VIP')}>
-                   <div className="p-4 border border-[#FFD700]/50 bg-black/60 backdrop-blur-md rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] group-hover:bg-[#FFD700] transition-all">
-                      <span className="text-[#FFD700] group-hover:text-black font-bold text-sm tracking-widest uppercase">Мессир</span>
-                   </div>
-                </div>
+            {/* ШАГ 2: ВЫБОР РАСКЛАДА (СТЕКЛО ПО ЦЕНТРУ) */}
+            {introStep === 'LAYOUT' && (
+              <div className="absolute inset-0 flex items-center justify-center p-4 animate-fade-in">
+                 <div className="w-full max-w-sm bg-[#0a0a0a]/60 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl flex flex-col gap-4">
+                    <h2 className="text-center text-[#D4AF37] font-cinzel text-xl tracking-widest mb-4">
+                      {consultant === 'VIP' ? 'ЧТО ВАС ТРЕВОЖИТ?' : 'О ЧЕМ ПОГОВОРИМ?'}
+                    </h2>
+                    
+                    <button onClick={() => handleLayoutSelect('RELATIONSHIPS')} className="w-full py-4 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg transition-all text-sm uppercase tracking-widest font-bold text-gray-200">
+                      ❤️ Отношения
+                    </button>
+                    <button onClick={() => handleLayoutSelect('FINANCE')} className="w-full py-4 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg transition-all text-sm uppercase tracking-widest font-bold text-gray-200">
+                      💸 Финансы
+                    </button>
+                    <button onClick={() => handleLayoutSelect('FATE')} className="w-full py-4 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg transition-all text-sm uppercase tracking-widest font-bold text-gray-200">
+                      🔮 Судьба (SAR)
+                    </button>
+                    
+                    <button onClick={() => setIntroStep('HERO')} className="mt-4 text-xs text-gray-500 hover:text-white text-center">Назад</button>
+                 </div>
+              </div>
+            )}
 
-                {/* Кнопка МАРГО (Справа) */}
-                <div className={`flex flex-col items-center gap-6 group cursor-pointer transition-all duration-1000 transform ${showMargoBtn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} onClick={() => enterAs('STANDARD')}>
-                   <div className="p-4 border border-[#D4AF37]/50 bg-black/60 backdrop-blur-md rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] group-hover:bg-[#D4AF37] transition-all">
-                      <span className="text-[#D4AF37] group-hover:text-black font-bold text-sm tracking-widest uppercase">Марго</span>
-                   </div>
-                </div>
+            {/* ШАГ 3: ВВОД ВОПРОСА (ВВЕРХУ ЭКРАНА) */}
+            {introStep === 'INPUT' && (
+              <div className="absolute inset-0 flex flex-col items-center pt-20 px-4 animate-fade-in bg-black/40 backdrop-blur-[2px]">
+                 <div className="w-full max-w-md bg-[#050505]/80 border border-[#D4AF37]/30 p-6 rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+                    <div className="flex justify-between items-center mb-4">
+                       <span className="text-[10px] uppercase text-[#D4AF37] tracking-widest font-bold">{appMode}</span>
+                       <button onClick={() => setIntroStep('LAYOUT')} className="text-[10px] text-gray-500">Назад</button>
+                    </div>
+                    
+                    <textarea 
+                      value={userProblem} 
+                      onChange={(e) => setUserProblem(e.target.value)} 
+                      placeholder="Напишите ваш вопрос здесь..." 
+                      autoFocus
+                      className="w-full h-32 bg-transparent border-b border-[#333] text-lg text-gray-100 focus:border-[#D4AF37] outline-none resize-none font-serif placeholder-gray-600 mb-6"
+                    />
 
-             </div>
-             
-             <button onClick={fullReset} className="absolute top-6 right-6 text-xs text-white/50 hover:text-white">✕</button>
+                    <button 
+                      onClick={handleStartSession} 
+                      disabled={!userProblem.trim()} 
+                      className="w-full py-4 bg-[#D4AF37] text-black font-bold uppercase tracking-[0.2em] rounded hover:bg-[#FFD700] transition-transform active:scale-95 disabled:opacity-50 disabled:scale-100"
+                    >
+                      Начать Сеанс
+                    </button>
+                 </div>
+                 <p className="mt-4 text-center text-xs text-gray-400 opacity-60">
+                   Нажмите, и мы перейдем в кабинет...
+                 </p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* === ЭКРАН 3: КАБИНЕТ === */}
+        {/* --- СЦЕНА 2: КАБИНЕТ (РЕЗУЛЬТАТ) --- */}
         {screen === 'OFFICE' && (
-          <div className="w-full max-w-lg flex flex-col items-center p-4 animate-fade-in pb-20">
-            <div className="w-full flex justify-between mb-4 bg-black/40 p-2 rounded backdrop-blur-md">
-               <button onClick={() => setScreen('HALLWAY')} className="text-xs text-gray-300 hover:text-[#D4AF37]">← Назад</button>
-               <span className="text-xs text-[#D4AF37] uppercase tracking-widest font-bold">{consultant} • {appMode}</span>
+          <div className="w-full max-w-lg flex flex-col items-center p-4 animate-fade-in pb-20 pt-10">
+            
+            {/* Верхняя панель */}
+            <div className="w-full flex justify-between items-center mb-6 px-2">
+               <button onClick={fullReset} className="text-xs text-gray-400 hover:text-[#D4AF37] flex items-center gap-1">
+                 <span>←</span> Выход
+               </button>
+               <div className="flex gap-2">
+                 <button onClick={() => setMode('RANDOM')} className={`px-2 py-1 text-[9px] border rounded uppercase ${mode === 'RANDOM' ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'border-[#333] text-gray-500'}`}>Random</button>
+                 <button onClick={() => setMode('MANUAL')} className={`px-2 py-1 text-[9px] border rounded uppercase ${mode === 'MANUAL' ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'border-[#333] text-gray-500'}`}>Manual</button>
+               </div>
             </div>
 
-            {step === 'INTAKE' && (
-              <div className="w-full bg-[#050505]/80 backdrop-blur-md p-6 rounded-xl border border-[#D4AF37]/20 shadow-2xl">
-                <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-                  {['BLITZ', 'RELATIONSHIPS', 'FATE', 'FINANCE', 'CROSS'].map(m => (
-                    <button key={m} onClick={() => handleEnterOffice(m as AppMode)} className={`px-3 py-1 text-[9px] uppercase border rounded whitespace-nowrap ${appMode === m ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'border-[#333] text-gray-500'}`}>
-                      {m === 'FATE' ? 'Судьба' : m === 'RELATIONSHIPS' ? 'Отношения' : m === 'CROSS' ? 'Крест' : m === 'FINANCE' ? 'Финансы' : 'Блиц'}
-                    </button>
-                  ))}
+            {/* ВЫБОР КАРТ */}
+            {analysisStep === 'SELECTION' && (
+              <div className="w-full flex flex-col items-center gap-8">
+                {/* Расклад */}
+                <div className="w-full scale-100 transition-all">
+                  {renderLayout()}
                 </div>
-                <textarea value={userProblem} onChange={(e) => setUserProblem(e.target.value)} placeholder="Ваш вопрос..." className="w-full h-24 bg-[#111] border border-[#333] rounded p-3 text-gray-300 text-sm focus:border-[#D4AF37] outline-none mb-4 font-sans"/>
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                   <button onClick={() => setMode('RANDOM')} className={`p-2 border rounded text-[10px] uppercase ${mode === 'RANDOM' ? 'bg-[#333] border-gray-500 text-white' : 'border-[#222] text-gray-600'}`}>🎲 Рандом</button>
-                   <button onClick={() => setMode('MANUAL')} className={`p-2 border rounded text-[10px] uppercase ${mode === 'MANUAL' ? 'bg-[#333] border-gray-500 text-white' : 'border-[#222] text-gray-600'}`}>🤲 Вручную</button>
-                </div>
-                <button onClick={handleStart} disabled={!userProblem.trim()} className="w-full py-3 bg-[#D4AF37] text-black font-bold uppercase tracking-widest rounded hover:bg-[#FFD700] shadow-lg">Начать Сеанс</button>
+                
+                {mode === 'RANDOM' && (
+                   <button onClick={handleShuffle} className="text-[10px] uppercase text-gray-500 border-b border-dashed border-gray-600 hover:text-white">
+                     Перетасовать карты
+                   </button>
+                )}
+
+                <button 
+                  onClick={runDiagnosis} 
+                  disabled={selectedCards.some(c => c === null)} 
+                  className="w-full max-w-xs py-4 border border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/5 hover:bg-[#D4AF37] hover:text-black uppercase tracking-widest font-bold rounded transition-all backdrop-blur-md shadow-[0_0_20px_rgba(212,175,55,0.1)]"
+                >
+                   ВСКРЫТЬ КАРТЫ
+                </button>
               </div>
             )}
 
-            {step === 'SELECTION' && (
-              <div className="w-full flex flex-col items-center gap-6">
-                {renderLayout()}
-                <button onClick={runDiagnosis} disabled={selectedCards.some(c => c === null)} className="w-full max-w-xs py-3 bg-[#D4AF37]/20 border border-[#D4AF37] text-[#D4AF37] uppercase tracking-widest font-bold rounded hover:bg-[#D4AF37] hover:text-black transition-all backdrop-blur-md">Вскрыть Карты</button>
-              </div>
-            )}
-
-            {step === 'ANALYSIS' && (
-              <div className="w-full bg-[#050505]/90 backdrop-blur-xl border border-[#D4AF37]/30 p-6 rounded-xl shadow-2xl">
+            {/* АНАЛИЗ (РЕЗУЛЬТАТ) */}
+            {analysisStep === 'ANALYSIS' && (
+              <div className="w-full bg-[#050505]/80 backdrop-blur-xl border border-[#D4AF37]/30 p-6 rounded-xl shadow-2xl animate-fade-in">
                  {isLoading ? (
-                    <div className="text-center py-10">
+                    <div className="text-center py-12">
                       <div className="w-12 h-12 border-2 border-t-[#D4AF37] border-r-[#D4AF37] border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <span className="text-[#D4AF37] text-xs uppercase tracking-widest animate-pulse">Связь с астралом...</span>
+                      <span className="text-[#D4AF37] text-xs uppercase tracking-widest animate-pulse block">
+                        {consultant === 'VIP' ? 'Мессир думает...' : 'Марго формулирует...'}
+                      </span>
                     </div>
                  ) : (
                     <>
-                      <div className="flex justify-center gap-2 mb-6 overflow-x-auto pb-2">
-                        {selectedCards.map((c, i) => <div key={i} className="w-10 flex-shrink-0 aspect-[2/3]"><img src={c?.imageUrl} className="rounded shadow-md" /></div>)}
+                      {/* Карты (миниатюры) */}
+                      <div className="flex justify-center gap-2 mb-6 overflow-x-auto pb-2 border-b border-[#333]">
+                        {selectedCards.map((c, i) => (
+                           <div key={i} className="w-8 flex-shrink-0 aspect-[2/3] opacity-80 hover:opacity-100 transition-opacity">
+                             <img src={c?.imageUrl} className="rounded" />
+                           </div>
+                        ))}
                       </div>
+
+                      {/* Плеер */}
                       <div className="mb-6">
                          {!audioUrl ? (
                            <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className="w-full py-3 border border-dashed border-[#555] text-[10px] tracking-widest text-gray-400 hover:text-[#D4AF37] hover:border-[#D4AF37] uppercase rounded transition-colors flex justify-center items-center gap-2">
-                             {isGeneratingVoice ? 'Загрузка голоса...' : '🎙️ Озвучить ответ'}
+                             {isGeneratingVoice ? 'Загрузка...' : '🎙️ Озвучить ответ'}
                            </button>
                          ) : (
-                           <div className="bg-[#D4AF37]/10 p-2 rounded border border-[#D4AF37]/20">
-                             <audio controls src={audioUrl} className="w-full h-8 opacity-80" autoPlay />
+                           <div className="bg-[#D4AF37]/10 p-2 rounded border border-[#D4AF37]/20 flex flex-col gap-1">
+                             <span className="text-[9px] text-[#D4AF37] uppercase px-2">Голос {consultant === 'VIP' ? 'Мессира' : 'Марго'}</span>
+                             <audio controls src={audioUrl} className="w-full h-8 opacity-90" autoPlay />
                            </div>
                          )}
                       </div>
+
+                      {/* Текст */}
                       <div className="whitespace-pre-wrap text-sm text-gray-300 leading-relaxed pl-4 border-l-2 border-[#D4AF37]/50 mb-8 italic font-serif">
                         {resultText}
                       </div>
-                      <button onClick={() => {setStep('INTAKE'); setResultText(''); setAudioUrl(null);}} className="w-full py-4 text-[10px] uppercase tracking-[0.2em] text-gray-500 hover:text-white border-t border-[#333] hover:border-gray-600 transition-colors">
-                        Задать новый вопрос
+
+                      <button onClick={() => {setAnalysisStep('SELECTION'); setResultText(''); setAudioUrl(null);}} className="w-full py-4 text-[10px] uppercase tracking-[0.2em] text-gray-500 hover:text-white border-t border-[#333] hover:border-gray-600 transition-colors">
+                        Разобрать еще одну ситуацию
                       </button>
                     </>
                  )}
