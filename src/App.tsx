@@ -153,18 +153,15 @@ const App: React.FC = () => {
     setUserProblem('');
     setAudioUrl(null);
     setConsultant('STANDARD');
+    setAnalysisStep('TABLE');
+    setCardsRevealed(false);
   };
 
-  // --- КОМПОНЕНТЫ ОТРИСОВКИ ---
-  
+  // --- КОМПОНЕНТЫ КАРТ ---
   const CardImage = ({ card }: { card: TarotCard | null }) => {
     if (!cardsRevealed) return <img src={ASSETS.img_cardback} className="w-full h-full object-cover rounded shadow-lg animate-pulse" alt="Cover" />;
-    
     return (
-      <div 
-        className="w-full h-full relative animate-flip-in cursor-zoom-in group"
-        onClick={() => setZoomedCard(card)}
-      >
+      <div className="w-full h-full relative animate-flip-in cursor-zoom-in group" onClick={() => setZoomedCard(card)}>
         <img src={card?.imageUrl} className="w-full h-full object-cover rounded shadow-lg transition-transform group-hover:scale-105" alt={card?.name} crossOrigin="anonymous" />
         <div className="absolute bottom-0 w-full bg-black/80 text-[8px] text-[#D4AF37] text-center py-1 truncate px-1">{card?.name}</div>
       </div>
@@ -173,7 +170,7 @@ const App: React.FC = () => {
 
   const RenderLayout = () => {
     if (appMode === 'BLITZ') {
-      return <div className="w-48 aspect-[2/3] mx-auto"><CardImage card={selectedCards[0]} /></div>;
+      return <div className="w-48 max-w-[50%] aspect-[2/3] mx-auto"><CardImage card={selectedCards[0]} /></div>;
     }
     if (appMode === 'RELATIONSHIPS') {
       return (
@@ -194,15 +191,16 @@ const App: React.FC = () => {
     }
     if (appMode === 'FINANCE') {
       return (
-        <div className="grid grid-cols-2 gap-3 max-w-[240px] mx-auto aspect-square">
+        <div className="grid grid-cols-2 gap-3 max-w-[200px] mx-auto aspect-square items-center">
           <CardImage card={selectedCards[0]} /><CardImage card={selectedCards[1]} />
           <CardImage card={selectedCards[2]} /><CardImage card={selectedCards[3]} />
         </div>
       );
     }
     if (appMode === 'CROSS') {
+      // Уменьшил размер креста, чтобы влезал
       return (
-        <div className="relative w-full max-w-[280px] aspect-[3/4] mx-auto">
+        <div className="relative w-full max-w-[220px] aspect-[3/4] mx-auto my-auto">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] z-20 shadow-2xl scale-110"><CardImage card={selectedCards[0]} /></div>
           <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[1]} /></div>
           <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[2]} /></div>
@@ -214,226 +212,186 @@ const App: React.FC = () => {
     return null;
   };
 
-  // --- ГЛАВНЫЙ РЕНДЕР ---
   return (
-    // Используем h-[100dvh] для корректной работы на iPhone с адресной строкой
+    // ГЛАВНЫЙ КОНТЕЙНЕР: Фиксируем высоту по экрану (100dvh) и запрещаем скролл BODY
     <div className="h-[100dvh] w-full font-serif flex flex-col relative overflow-hidden text-[#E0E0E0] selection:bg-[#D4AF37] selection:text-black">
       
-      {/* МОДАЛКА ЗУМА */}
+      {/* ЗУМ КАРТЫ (Независимый слой) */}
       {zoomedCard && (
-        <div 
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 backdrop-blur-md p-6 animate-fade-in cursor-zoom-out"
-          onClick={() => setZoomedCard(null)}
-        >
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-6 cursor-zoom-out" onClick={() => setZoomedCard(null)}>
           <div className="relative max-w-lg w-full max-h-[85vh] aspect-[2/3] flex flex-col items-center">
-             <img src={zoomedCard.imageUrl} className="w-full h-full object-contain rounded-lg shadow-[0_0_50px_rgba(212,175,55,0.2)]" alt={zoomedCard.name} />
-             <div className="mt-4 text-[#D4AF37] text-xl font-cinzel font-bold text-center">
-               {zoomedCard.name}
-             </div>
+             <img src={zoomedCard.imageUrl} className="w-full h-full object-contain rounded-lg" alt={zoomedCard.name} />
+             <div className="mt-4 text-[#D4AF37] text-xl font-cinzel font-bold text-center">{zoomedCard.name}</div>
           </div>
         </div>
       )}
 
-      {/* ФОН: ГЛАВНЫЙ */}
-      <div className={`fixed inset-0 z-0 transition-all duration-[1500ms] ease-in-out ${screen === 'HALLWAY' ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${introStep === 'TRANSITION' ? 'scale-[2.5] blur-sm' : 'scale-100'}`}>
+      {/* ФОНОВЫЕ СЛОИ */}
+      <div className={`fixed inset-0 z-0 transition-all duration-[1500ms] ${screen === 'HALLWAY' ? 'opacity-100' : 'opacity-0'} ${introStep === 'TRANSITION' ? 'scale-[2.5] blur-sm' : 'scale-100'}`}>
          <video src={ASSETS.vid_partners} autoPlay loop muted playsInline className="w-full h-full object-cover" />
          <div className={`absolute inset-0 bg-black/40 transition-colors duration-1000 ${introStep === 'INPUT' ? 'bg-black/70' : ''}`}></div>
       </div>
 
-      {/* ФОН: КАБИНЕТ */}
       <div className={`fixed inset-0 z-0 transition-opacity duration-1000 ${screen === 'OFFICE' ? 'opacity-100' : 'opacity-0'}`}>
          {screen === 'OFFICE' && <video src={ASSETS.vid_table} autoPlay loop muted playsInline className="w-full h-full object-cover" />}
          <div className="absolute inset-0 bg-black/60"></div> 
       </div>
 
-      {/* ОСНОВНОЙ КОНТЕНТ (СЛОЙ 2) */}
-      <div className="relative z-10 w-full h-full flex flex-col">
-        
-        {/* === СЦЕНА 1: ПРИХОЖАЯ === */}
-        {screen === 'HALLWAY' && (
-          <div className="w-full h-full flex flex-col justify-end py-6 px-4 overflow-y-auto">
-            
-            {/* ШАГ 1: ГЕРОИ */}
-            {introStep === 'HERO' && (
-              <div className="flex flex-col items-center w-full animate-fade-in gap-6 my-auto">
-                <div className="flex gap-4 md:gap-12 mb-4">
-                    <button onClick={() => { setConsultant('VIP'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#FFD700]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#FFD700] hover:text-black transition-all flex flex-col items-center gap-1 group shadow-[0_0_20px_rgba(255,215,0,0.2)]">
-                        <span className="text-xl">🦁</span>
-                        <span className="text-[#FFD700] group-hover:text-black font-bold text-xs tracking-widest uppercase">МЕССИР</span>
-                    </button>
-                    <button onClick={() => { setConsultant('STANDARD'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#D4AF37]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#D4AF37] hover:text-black transition-all flex flex-col items-center gap-1 group shadow-[0_0_20px_rgba(212,175,55,0.2)]">
-                        <span className="text-xl">🦊</span>
-                        <span className="text-[#D4AF37] group-hover:text-black font-bold text-xs tracking-widest uppercase">МАРГО</span>
-                    </button>
-                </div>
-
-                <div className="text-center mb-6">
-                  <h1 className="text-3xl md:text-5xl font-bold text-[#D4AF37] font-cinzel drop-shadow-lg tracking-widest">PSY TAROT</h1>
+      {/* --- ЭКРАН 1: ВХОД (ПРИХОЖАЯ) --- */}
+      {screen === 'HALLWAY' && (
+        <div className="relative z-10 w-full h-full flex flex-col overflow-y-auto">
+          {/* Контент прихожей центрируем и даем отступы */}
+          {introStep === 'HERO' && (
+            <div className="flex-grow flex flex-col items-center justify-center gap-8 p-6">
+               {/* Кнопки героев */}
+               <div className="flex gap-4 md:gap-12 mt-auto">
+                  <button onClick={() => { setConsultant('VIP'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#FFD700]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#FFD700] hover:text-black transition-all flex flex-col items-center gap-1 group">
+                     <span className="text-xl">🦁</span><span className="text-[#FFD700] group-hover:text-black font-bold text-xs tracking-widest uppercase">МЕССИР</span>
+                  </button>
+                  <button onClick={() => { setConsultant('STANDARD'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#D4AF37]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#D4AF37] hover:text-black transition-all flex flex-col items-center gap-1 group">
+                     <span className="text-xl">🦊</span><span className="text-[#D4AF37] group-hover:text-black font-bold text-xs tracking-widest uppercase">МАРГО</span>
+                  </button>
+               </div>
+               
+               {/* Заголовок */}
+               <div className="text-center">
+                  <h1 className="text-3xl md:text-5xl font-bold text-[#D4AF37] font-cinzel tracking-widest">PSY TAROT</h1>
                   <p className="text-[10px] md:text-xs uppercase tracking-[0.4em] opacity-80 mt-1">Неправильная психология</p>
+               </div>
+
+               {/* Кнопки сервиса (Низ) */}
+               <div className="mb-auto mt-8 flex flex-wrap justify-center gap-3">
+                  <a href={LINKS.MASTER} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/40 rounded-full text-[10px] text-[#D4AF37] uppercase tracking-widest font-bold">Связь с Мастером</a>
+                  <a href={LINKS.COMMUNITY} className="px-4 py-2 bg-white/5 border border-white/20 rounded-full text-[10px] text-gray-300 uppercase tracking-widest">Комьюнити</a>
+               </div>
+            </div>
+          )}
+          
+          {/* Модалки выбора расклада и ввода - они поверх всего */}
+          {introStep === 'LAYOUT' && (
+             <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm z-50">
+                <div className="w-full max-w-sm bg-[#111] border border-white/10 p-6 rounded-2xl shadow-2xl flex flex-col gap-3">
+                   <h2 className="text-center text-[#D4AF37] font-cinzel text-lg tracking-widest mb-4">ВЫБЕРИТЕ ПУТЬ</h2>
+                   <button onClick={() => handleLayoutSelect('BLITZ')} className="btn-layout w-full py-3 bg-white/5 border border-white/10 hover:border-[#D4AF37] rounded flex justify-between px-4 items-center"><span className="text-xs uppercase font-bold text-gray-300">⚡ Блиц</span><span className="text-[9px] text-gray-500">1 карта</span></button>
+                   <button onClick={() => handleLayoutSelect('RELATIONSHIPS')} className="btn-layout w-full py-3 bg-white/5 border border-white/10 hover:border-[#D4AF37] rounded flex justify-between px-4 items-center"><span className="text-xs uppercase font-bold text-gray-300">❤️ Отношения</span><span className="text-[9px] text-gray-500">2 карты</span></button>
+                   <button onClick={() => handleLayoutSelect('FATE')} className="btn-layout w-full py-3 bg-white/5 border border-white/10 hover:border-[#D4AF37] rounded flex justify-between px-4 items-center"><span className="text-xs uppercase font-bold text-gray-300">🔮 Судьба</span><span className="text-[9px] text-gray-500">3 карты</span></button>
+                   <button onClick={() => handleLayoutSelect('FINANCE')} className="btn-layout w-full py-3 bg-white/5 border border-white/10 hover:border-[#D4AF37] rounded flex justify-between px-4 items-center"><span className="text-xs uppercase font-bold text-gray-300">💸 Финансы</span><span className="text-[9px] bg-[#D4AF37] text-black px-1 rounded">PRO</span></button>
+                   <button onClick={() => handleLayoutSelect('CROSS')} className="btn-layout w-full py-3 bg-white/5 border border-white/10 hover:border-[#D4AF37] rounded flex justify-between px-4 items-center"><span className="text-xs uppercase font-bold text-gray-300">✝️ Крест</span><span className="text-[9px] bg-[#D4AF37] text-black px-1 rounded">PRO</span></button>
+                   <button onClick={() => setIntroStep('HERO')} className="mt-4 text-xs text-gray-500 text-center">Назад</button>
                 </div>
+             </div>
+          )}
 
-                <div className="w-full flex flex-wrap justify-center gap-3">
-                   <a href={LINKS.MASTER} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/40 rounded-full text-[10px] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black uppercase tracking-widest transition-all shadow-lg font-bold">
-                     Связь с Мастером
-                   </a>
-                   <a href={LINKS.COMMUNITY} className="px-4 py-2 bg-white/5 border border-white/20 rounded-full text-[10px] text-gray-300 hover:bg-white/20 hover:text-white uppercase tracking-widest transition-all shadow-lg">
-                     Комьюнити
-                   </a>
+          {introStep === 'INPUT' && (
+             <div className="absolute inset-0 flex flex-col pt-20 px-4 bg-black/90 backdrop-blur-md z-50 items-center">
+                <div className="w-full max-w-md bg-[#111] border border-[#D4AF37]/30 p-6 rounded-xl relative">
+                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#D4AF37] text-black text-[9px] font-bold px-3 py-1 rounded uppercase tracking-widest">{consultant === 'VIP' ? 'Вопрос Мессиру' : 'Вопрос Марго'}</div>
+                   <textarea value={userProblem} onChange={(e) => setUserProblem(e.target.value)} placeholder="Ваш вопрос..." autoFocus className="w-full h-32 bg-transparent border-b border-[#333] text-lg text-gray-200 focus:border-[#D4AF37] outline-none resize-none font-serif mb-6"/>
+                   <button onClick={handleStartSession} disabled={!userProblem.trim()} className="w-full py-4 bg-[#D4AF37] text-black font-bold uppercase tracking-[0.2em] rounded">Начать</button>
+                   <button onClick={() => setIntroStep('LAYOUT')} className="w-full mt-4 text-xs text-gray-500">Отмена</button>
                 </div>
-              </div>
-            )}
+             </div>
+          )}
+        </div>
+      )}
 
-            {/* ШАГ 2: РАСКЛАДЫ */}
-            {introStep === 'LAYOUT' && (
-              <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in z-20">
-                 <div className="w-full max-w-sm bg-[#0a0a0a]/90 border border-white/10 p-6 rounded-2xl shadow-2xl flex flex-col gap-3">
-                    <h2 className="text-center text-[#D4AF37] font-cinzel text-lg tracking-widest mb-4">ВЫБЕРИТЕ ПУТЬ</h2>
-                    <button onClick={() => handleLayoutSelect('BLITZ')} className="w-full py-3 bg-white/5 border border-white/10 hover:border-[#D4AF37] rounded flex justify-between px-4 items-center group">
-                      <span className="text-gray-300 text-xs uppercase font-bold tracking-widest group-hover:text-[#D4AF37]">⚡ Блиц</span>
-                      <span className="text-[9px] bg-[#333] px-2 py-0.5 rounded text-gray-400">1 карта</span>
-                    </button>
-                    <button onClick={() => handleLayoutSelect('RELATIONSHIPS')} className="w-full py-3 bg-white/5 border border-white/10 hover:border-[#D4AF37] rounded flex justify-between px-4 items-center group">
-                      <span className="text-gray-300 text-xs uppercase font-bold tracking-widest group-hover:text-[#D4AF37]">❤️ Отношения</span>
-                      <span className="text-[9px] bg-[#333] px-2 py-0.5 rounded text-gray-400">2 карты</span>
-                    </button>
-                    <button onClick={() => handleLayoutSelect('FATE')} className="w-full py-3 bg-white/5 border border-white/10 hover:border-[#D4AF37] rounded flex justify-between px-4 items-center group">
-                      <span className="text-gray-300 text-xs uppercase font-bold tracking-widest group-hover:text-[#D4AF37]">🔮 Судьба</span>
-                      <span className="text-[9px] bg-[#333] px-2 py-0.5 rounded text-gray-400">3 карты</span>
-                    </button>
-                    <button onClick={() => handleLayoutSelect('FINANCE')} className="w-full py-3 bg-white/5 border border-white/10 hover:border-[#D4AF37] rounded flex justify-between px-4 items-center group">
-                      <span className="text-gray-300 text-xs uppercase font-bold tracking-widest group-hover:text-[#D4AF37]">💸 Финансы</span>
-                      <span className="text-[9px] bg-[#D4AF37] text-black px-2 py-0.5 rounded font-bold">PRO</span>
-                    </button>
-                    <button onClick={() => handleLayoutSelect('CROSS')} className="w-full py-3 bg-white/5 border border-white/10 hover:border-[#D4AF37] rounded flex justify-between px-4 items-center group">
-                      <span className="text-gray-300 text-xs uppercase font-bold tracking-widest group-hover:text-[#D4AF37]">✝️ Крест</span>
-                      <span className="text-[9px] bg-[#D4AF37] text-black px-2 py-0.5 rounded font-bold">PRO</span>
-                    </button>
-                    <button onClick={() => setIntroStep('HERO')} className="mt-4 text-xs text-gray-500 hover:text-white">← Назад</button>
-                 </div>
-              </div>
-            )}
-
-            {/* ШАГ 3: ВВОД ВОПРОСА */}
-            {introStep === 'INPUT' && (
-              <div className="absolute inset-0 flex flex-col pt-20 px-4 bg-black/70 backdrop-blur-md animate-fade-in items-center z-20">
-                 <div className="w-full max-w-md bg-[#050505] border border-[#D4AF37]/30 p-6 rounded-xl shadow-2xl relative">
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#D4AF37] text-black text-[9px] font-bold px-3 py-1 rounded uppercase tracking-widest">
-                       {consultant === 'VIP' ? 'Вопрос Мессиру' : 'Вопрос Марго'}
-                    </div>
-                    <textarea 
-                      value={userProblem} 
-                      onChange={(e) => setUserProblem(e.target.value)} 
-                      placeholder={consultant === 'VIP' ? "Излагайте суть..." : "Что случилось?"} 
-                      autoFocus 
-                      className="w-full h-32 bg-transparent border-b border-[#333] text-lg text-gray-200 focus:border-[#D4AF37] outline-none resize-none font-serif placeholder-gray-600 mb-6"
-                    />
-                    <button onClick={handleStartSession} disabled={!userProblem.trim()} className="w-full py-4 bg-[#D4AF37] text-black font-bold uppercase tracking-[0.2em] rounded hover:bg-[#FFD700] transition-transform active:scale-95 disabled:opacity-50">
-                      Начать Сеанс
-                    </button>
-                    <button onClick={() => setIntroStep('LAYOUT')} className="w-full mt-4 text-xs text-gray-500 hover:text-white">Отмена</button>
-                 </div>
-              </div>
-            )}
+      {/* --- ЭКРАН 2: КАБИНЕТ (OFFICE) - СТРОГАЯ СЕТКА --- */}
+      {screen === 'OFFICE' && (
+        <div className="relative z-10 w-full h-full flex flex-col overflow-hidden">
+          
+          {/* 1. ВЕРХНИЙ БАР (Фиксированный) */}
+          <div className="w-full flex justify-between items-center px-4 py-2 bg-black/20 shrink-0 h-10">
+             <button onClick={fullReset} className="text-[10px] text-gray-400 hover:text-[#D4AF37] uppercase tracking-widest flex items-center gap-2">
+               <span>✕</span> Выход
+             </button>
+             <div className="text-[9px] text-[#D4AF37]/60 uppercase tracking-widest">{appMode}</div>
           </div>
-        )}
 
-        {/* === СЦЕНА 2: КАБИНЕТ (OFFICE) === */}
-        {screen === 'OFFICE' && (
-          <div className="w-full h-full flex flex-col">
-            
-            {/* ШАПКА: Выход */}
-            <div className="w-full flex justify-between items-center p-4 z-20 shrink-0">
-               <button onClick={fullReset} className="text-[10px] text-gray-400 hover:text-[#D4AF37] flex items-center gap-1 uppercase tracking-widest bg-black/40 px-3 py-1 rounded backdrop-blur-sm">
-                 <span>✕</span> Выход
-               </button>
-            </div>
+          {/* 2. ГЛАВНАЯ ЗОНА (FLEX) */}
+          {/* Используем flex-1, чтобы занять всё место, и min-h-0 чтобы разрешить сжатие */}
+          <div className="flex-1 flex flex-col min-h-0">
+             
+             {/* 2.1. ЗОНА КАРТ (ВЕРХ) */}
+             {/* Она гибкая. Если текста нет, занимает всё. Если текст есть, сжимается, но не меньше min-h-[...]. */}
+             <div className={`flex flex-col items-center justify-center transition-all duration-500 
+                ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[40%] min-h-[200px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}>
+                
+                <div ref={layoutRef} className="w-full h-full p-2 flex items-center justify-center overflow-hidden">
+                   {RenderLayout()}
+                </div>
+             </div>
 
-            {/* --- ГЛАВНОЕ РАЗДЕЛЕНИЕ ЭКРАНА (SPLIT VIEW) --- */}
-            
-            {/* 1. ЗОНА КАРТ (ВЕРХНЯЯ ЧАСТЬ) */}
-            {/* В режиме TABLE она занимает 100% высоты (минус шапка). В режиме RESULT она сжимается до 35-40%. */}
-            <div 
-              className={`w-full flex flex-col items-center justify-center transition-all duration-700 ease-in-out
-                ${analysisStep === 'TABLE' ? 'flex-grow h-auto' : 'h-[35%] shrink-0 border-b border-[#D4AF37]/30'}
-              `}
-            >
-               <div ref={layoutRef} className="w-full h-full p-2 flex items-center justify-center">
-                  {RenderLayout()}
-               </div>
-            </div>
+             {/* 2.2. ЗОНА УПРАВЛЕНИЯ (СЕРЕДИНА) */}
+             {/* Это отдельный блок в потоке flex, он никогда не налезет на карты */}
+             <div className="shrink-0 w-full flex justify-center items-center py-2 bg-gradient-to-t from-black via-black/50 to-transparent z-20">
+                {/* КНОПКИ УПРАВЛЕНИЯ */}
+                {!cardsRevealed && analysisStep === 'TABLE' && (
+                   <button onClick={handleRevealCards} className="px-6 py-3 bg-[#D4AF37] text-black font-bold uppercase tracking-widest rounded-full shadow-lg animate-pulse">
+                      Вскрыть
+                   </button>
+                )}
+                {cardsRevealed && analysisStep === 'TABLE' && (
+                   <button onClick={handleGetInterpretation} className={`px-6 py-3 font-bold uppercase tracking-widest rounded-full shadow-lg border border-white/20 
+                      ${consultant === 'VIP' ? 'bg-gradient-to-r from-[#FFD700] to-black text-[#FFD700]' : 'bg-gradient-to-r from-[#D4AF37] to-black text-[#D4AF37]'}`}>
+                      {consultant === 'VIP' ? 'Слово Мессира' : 'Мнение Марго'}
+                   </button>
+                )}
+             </div>
 
-            {/* 2. ЗОНА УПРАВЛЕНИЯ / ТЕКСТА (НИЖНЯЯ ЧАСТЬ) */}
-            
-            {/* ВАРИАНТ А: КНОПКИ УПРАВЛЕНИЯ (Пока нет текста) */}
-            {analysisStep === 'TABLE' && (
-               <div className="w-full p-6 flex flex-col items-center justify-center gap-4 bg-gradient-to-t from-black via-black/80 to-transparent pb-10">
-                  {!cardsRevealed ? (
-                     <button onClick={handleRevealCards} className="px-10 py-5 bg-[#D4AF37] text-black font-bold uppercase tracking-[0.2em] rounded-full shadow-[0_0_30px_rgba(212,175,55,0.4)] animate-pulse hover:scale-105 transition-transform z-30">
-                       Вскрыть Карты
-                     </button>
-                  ) : (
-                     <button onClick={handleGetInterpretation} className={`px-8 py-4 font-bold uppercase tracking-[0.2em] rounded-full shadow-lg hover:scale-105 transition-transform backdrop-blur-md border border-white/20 z-30 ${consultant === 'VIP' ? 'bg-gradient-to-r from-[#FFD700]/80 to-black text-[#FFD700]' : 'bg-gradient-to-r from-[#D4AF37]/80 to-black text-[#D4AF37]'}`}>
-                       {consultant === 'VIP' ? '📜 Откровение Мессира' : '🦊 Марго говорит'}
-                     </button>
-                  )}
-               </div>
-            )}
-
-            {/* ВАРИАНТ Б: ТЕКСТ ТОЛКОВАНИЯ (Занимает оставшиеся 65%) */}
-            {analysisStep === 'RESULT' && (
-               <div className="flex-grow flex flex-col bg-[#050505]/95 backdrop-blur-xl overflow-hidden animate-slide-up h-[65%]">
-                  
-                  {/* Хедер текста (Плеер и кнопки) */}
-                  <div className="p-3 border-b border-[#333] flex items-center justify-between shrink-0">
-                     <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${consultant === 'VIP' ? 'bg-[#FFD700]' : 'bg-[#D4AF37]'}`}></div>
-                        <span className={`text-xs font-bold uppercase tracking-widest ${consultant === 'VIP' ? 'text-[#FFD700]' : 'text-[#D4AF37]'}`}>
-                          {consultant === 'VIP' ? 'МЕССИР' : 'МАРГО'}
-                        </span>
-                     </div>
-                     <div className="flex gap-4 items-center">
-                        <button onClick={handleCopyText} className="text-gray-400 hover:text-white text-lg" title="Копировать">📋</button>
-                        <button onClick={handleDownloadImage} className="text-gray-400 hover:text-white text-lg" title="Фото">📸</button>
-                        <button onClick={handleShare} className="text-gray-400 hover:text-white text-lg" title="Поделиться">🔗</button>
-                        {!audioUrl ? (
-                          <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className="text-gray-400 hover:text-white text-lg">
-                            {isGeneratingVoice ? '⏳' : '🔊'}
-                          </button>
-                        ) : (
-                          <audio controls playsInline src={audioUrl} className="h-8 w-32 md:w-40" />
-                        )}
-                     </div>
-                  </div>
-
-                  {/* Скроллящийся текст */}
-                  <div className="flex-grow overflow-y-auto p-6 text-sm text-gray-300 leading-relaxed font-serif scrollbar-thin scrollbar-thumb-[#D4AF37]/20 pb-20">
-                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center h-full gap-4">
-                          <div className="w-8 h-8 border-2 border-dashed border-[#D4AF37] rounded-full animate-spin"></div>
-                          <span className="text-xs text-[#D4AF37] animate-pulse">Чтение знаков...</span>
-                        </div>
-                     ) : (
-                       <>
-                         <div className="whitespace-pre-wrap">{resultText}</div>
-                         
-                         {resultText && (
-                            <div className="mt-8 pt-6 border-t border-[#333] text-center pb-8">
-                               <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Хотите другой взгляд?</p>
-                               <button onClick={handleSecondOpinion} className={`w-full py-3 border border-dashed rounded transition-colors text-xs uppercase font-bold tracking-widest flex items-center justify-center gap-2 ${consultant === 'VIP' ? 'border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/10' : 'border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700]/10'}`}>
-                                 {consultant === 'VIP' ? '🦊 Спросить Марго' : '🦁 Мнение Мессира'}
-                               </button>
-                            </div>
+             {/* 2.3. ЗОНА ТЕКСТА (НИЗ) */}
+             {/* Появляется только при результате. Занимает оставшееся место (flex-1). Скроллится ВНУТРИ себя. */}
+             {analysisStep === 'RESULT' && (
+                <div className="flex-1 flex flex-col bg-[#050505]/95 min-h-0 border-t border-[#333]">
+                   
+                   {/* Шапка плеера */}
+                   <div className="h-12 shrink-0 border-b border-[#333] flex items-center justify-between px-4 bg-[#111]">
+                      <div className="flex items-center gap-2">
+                         <div className={`w-2 h-2 rounded-full ${consultant === 'VIP' ? 'bg-[#FFD700]' : 'bg-[#D4AF37]'}`}></div>
+                         <span className={`text-[10px] font-bold uppercase tracking-widest ${consultant === 'VIP' ? 'text-[#FFD700]' : 'text-[#D4AF37]'}`}>
+                           {consultant === 'VIP' ? 'МЕССИР' : 'МАРГО'}
+                         </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                         <button onClick={handleDownloadImage} className="text-gray-400">📸</button>
+                         <button onClick={handleShare} className="text-gray-400">🔗</button>
+                         {!audioUrl ? (
+                           <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className="text-gray-400 text-lg">
+                             {isGeneratingVoice ? '...' : '🔊'}
+                           </button>
+                         ) : (
+                           <audio controls playsInline src={audioUrl} className="h-6 w-28" />
                          )}
-                       </>
-                     )}
-                  </div>
-               </div>
-            )}
+                      </div>
+                   </div>
+
+                   {/* Скроллящийся текст */}
+                   <div className="flex-1 overflow-y-auto p-4 text-sm text-gray-300 leading-relaxed font-serif pb-safe">
+                      {isLoading ? (
+                         <div className="flex flex-col items-center justify-center h-full gap-2">
+                           <div className="w-6 h-6 border-2 border-dashed border-[#D4AF37] rounded-full animate-spin"></div>
+                           <span className="text-xs text-[#D4AF37]">Связь...</span>
+                         </div>
+                      ) : (
+                         <>
+                           <div className="whitespace-pre-wrap mb-6">{resultText}</div>
+                           
+                           {/* Второе мнение */}
+                           <div className="pt-4 border-t border-[#333] text-center pb-8">
+                              <p className="text-[9px] text-gray-500 uppercase tracking-widest mb-2">Другой взгляд</p>
+                              <button onClick={handleSecondOpinion} className={`w-full py-3 border border-dashed rounded text-xs uppercase font-bold tracking-widest ${consultant === 'VIP' ? 'border-[#D4AF37]/30 text-[#D4AF37]' : 'border-[#FFD700]/30 text-[#FFD700]'}`}>
+                                {consultant === 'VIP' ? 'Спросить Марго' : 'Спросить Мессира'}
+                              </button>
+                           </div>
+                         </>
+                      )}
+                   </div>
+                </div>
+             )}
 
           </div>
-        )}
+        </div>
+      )}
 
-      </div>
     </div>
   );
 };
