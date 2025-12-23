@@ -23,24 +23,30 @@ const LINKS = {
 };
 
 const App: React.FC = () => {
+  // --- СОСТОЯНИЯ ---
   const [screen, setScreen] = useState<Screen>('HALLWAY');
   const [introStep, setIntroStep] = useState<IntroStep>('HERO');
+  const [showInstallHelp, setShowInstallHelp] = useState(false); // Новое состояние для окна помощи
+  
   const [consultant, setConsultant] = useState<ConsultantType>('STANDARD');
   const [appMode, setAppMode] = useState<AppMode>('RELATIONSHIPS');
   const [userProblem, setUserProblem] = useState('');
   
+  // Карты
   const [selectedCards, setSelectedCards] = useState<(TarotCard | null)[]>([null]);
   const [cardsRevealed, setCardsRevealed] = useState(false);
   const [analysisStep, setAnalysisStep] = useState<'TABLE' | 'RESULT'>('TABLE');
   const [zoomedCard, setZoomedCard] = useState<TarotCard | null>(null); 
   const layoutRef = useRef<HTMLDivElement>(null); 
   
+  // Результат и Аудио
   const [resultText, setResultText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // --- НАСТРОЙКИ ---
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (link) link.href = ASSETS.img_favicon;
@@ -53,6 +59,7 @@ const App: React.FC = () => {
       document.head.appendChild(metaApple);
     }
     metaApple.setAttribute('content', "yes");
+
     document.body.style.overscrollBehavior = "none";
     document.body.style.backgroundColor = "black";
   }, []);
@@ -63,6 +70,8 @@ const App: React.FC = () => {
     }
   }, [audioUrl]);
 
+  // --- ФУНКЦИИ ---
+  
   const handleCopyText = () => {
     const cardNames = selectedCards.map(c => c?.name).join(', ');
     const fullText = `🔮 Расклад: ${appMode}\n🃏 Карты: ${cardNames}\n\n${resultText}\n\n👉 Неправильная Психология`;
@@ -159,82 +168,81 @@ const App: React.FC = () => {
   };
 
   const RenderLayout = () => {
-    // 1. БЛИЦ
     if (appMode === 'BLITZ') {
-        return (
-            <div className="w-full h-full max-w-xs mx-auto p-4 flex items-center justify-center">
-                <div className="h-[85%] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div>
-            </div>
-        );
+        return <div className="w-full h-full max-w-xs mx-auto p-4 flex items-center justify-center"><div className="h-[85%] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div></div>;
     }
-
-    // 2. ОТНОШЕНИЯ
     if (appMode === 'RELATIONSHIPS') {
-        return (
-            <div className="flex justify-center gap-4 h-full items-center px-4">
-                <div className="h-[65%] max-h-[350px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div>
-                <div className="h-[65%] max-h-[350px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div>
-            </div>
-        );
+        return <div className="flex justify-center gap-4 h-full items-center px-4"><div className="h-[65%] max-h-[350px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div><div className="h-[65%] max-h-[350px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div></div>;
     }
-
-    // 3. СУДЬБА
     if (appMode === 'FATE') {
-        return (
-            <div className="flex justify-center gap-2 h-full items-center px-2">
-                <div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div>
-                <div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div>
-                <div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[2]} /></div>
-            </div>
-        );
+        return <div className="flex justify-center gap-2 h-full items-center px-2"><div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div><div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div><div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[2]} /></div></div>;
     }
-
-    // 4. ФИНАНСЫ (Исправлено: 2 строки, прижаты к верху)
+    
+    // ИСПРАВЛЕНИЕ 4 КАРТ (Финансы)
+    // На мобилках (по умолчанию) работает старая логика с процентами высоты.
+    // На ПК (md:) включается flex-row, центрирование и ограничение по ширине (max-w-lg).
     if (appMode === 'FINANCE') {
         return (
-            <div className="h-full w-full flex flex-col items-center justify-start pt-1 gap-1">
+            <div className="h-full w-full flex flex-col items-center justify-start pt-1 gap-1 md:flex-row md:justify-center md:items-center md:gap-4 md:max-w-lg md:mx-auto">
                 {/* 1-й ряд (Верхние) */}
-                <div className="flex justify-center gap-3 h-[45%] w-full">
-                    <div className="aspect-[2/3] h-full"><CardImage card={selectedCards[0]} /></div>
-                    <div className="aspect-[2/3] h-full"><CardImage card={selectedCards[1]} /></div>
+                <div className="flex justify-center gap-3 h-[45%] w-full md:h-auto md:w-auto md:gap-4">
+                    <div className="aspect-[2/3] h-full md:h-[300px]"><CardImage card={selectedCards[0]} /></div>
+                    <div className="aspect-[2/3] h-full md:h-[300px]"><CardImage card={selectedCards[1]} /></div>
                 </div>
                 {/* 2-й ряд (Нижние) */}
-                <div className="flex justify-center gap-3 h-[45%] w-full">
-                    <div className="aspect-[2/3] h-full"><CardImage card={selectedCards[2]} /></div>
-                    <div className="aspect-[2/3] h-full"><CardImage card={selectedCards[3]} /></div>
+                <div className="flex justify-center gap-3 h-[45%] w-full md:h-auto md:w-auto md:gap-4">
+                    <div className="aspect-[2/3] h-full md:h-[300px]"><CardImage card={selectedCards[2]} /></div>
+                    <div className="aspect-[2/3] h-full md:h-[300px]"><CardImage card={selectedCards[3]} /></div>
                 </div>
             </div>
         );
     }
 
-    // 5. КРЕСТ
     if (appMode === 'CROSS') {
-        return (
-            <div className="relative w-full h-full max-w-sm mx-auto p-2 flex items-center justify-center">
-                <div className="relative w-full aspect-[3/4]">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] shadow-2xl scale-110 z-20"><CardImage card={selectedCards[0]} /></div>
-                    <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[1]} /></div>
-                    <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[2]} /></div>
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[3]} /></div>
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[4]} /></div>
-                </div>
-            </div>
-        );
+        return <div className="relative w-full h-full max-w-sm mx-auto p-2 flex items-center justify-center"><div className="relative w-full aspect-[3/4]"><div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] shadow-2xl scale-110 z-20"><CardImage card={selectedCards[0]} /></div><div className="absolute top-1/2 left-0 -translate-y-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[1]} /></div><div className="absolute top-1/2 right-0 -translate-y-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[2]} /></div><div className="absolute top-0 left-1/2 -translate-x-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[3]} /></div><div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[4]} /></div></div></div>;
     }
     return null;
   };
 
   return (
     <div className="h-[100dvh] w-full font-serif flex flex-col relative overflow-hidden text-[#E0E0E0] selection:bg-[#D4AF37] selection:text-black">
+      
+      {/* МОДАЛЬНОЕ ОКНО "Как установить" */}
+      {showInstallHelp && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/95 backdrop-blur-md p-6" onClick={() => setShowInstallHelp(false)}>
+          <div className="bg-[#111] border border-[#D4AF37]/30 p-6 rounded-2xl max-w-sm w-full text-center relative" onClick={e => e.stopPropagation()}>
+            <button className="absolute top-2 right-4 text-gray-500 hover:text-white text-2xl" onClick={() => setShowInstallHelp(false)}>×</button>
+            <h3 className="text-[#D4AF37] font-cinzel text-lg mb-4 tracking-widest">КАК УСТАНОВИТЬ</h3>
+            <div className="text-left text-gray-300 text-sm space-y-4">
+              <div>
+                <p className="font-bold text-[#FFD700] mb-1">🍎 iPhone (Safari):</p>
+                <p>Нажмите кнопку "Поделиться" (квадрат со стрелкой внизу) → выберите "На экран «Домой»".</p>
+              </div>
+              <div>
+                <p className="font-bold text-[#D4AF37] mb-1">🤖 Android (Chrome):</p>
+                <p>Нажмите три точки в углу → выберите "Добавить на главный экран" или "Установить приложение".</p>
+              </div>
+            </div>
+            <button className="mt-6 w-full py-3 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/50 rounded uppercase text-xs font-bold tracking-widest hover:bg-[#D4AF37] hover:text-black transition-colors" onClick={() => setShowInstallHelp(false)}>Понятно</button>
+          </div>
+        </div>
+      )}
+
       {zoomedCard && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-6 cursor-zoom-out" onClick={() => setZoomedCard(null)}><div className="relative max-w-lg w-full max-h-[85vh] aspect-[2/3] flex flex-col items-center"><img src={zoomedCard.imageUrl} className="w-full h-full object-contain rounded-lg" /><div className="mt-4 text-[#D4AF37] text-xl font-cinzel font-bold text-center">{zoomedCard.name}</div></div></div>}
 
-      <div className={`fixed inset-0 z-0 transition-all duration-[1500ms] ${screen === 'HALLWAY' ? 'opacity-100' : 'opacity-0'} ${introStep === 'TRANSITION' ? 'scale-[2.5] blur-sm' : 'scale-100'}`}><video src={ASSETS.vid_partners} autoPlay loop muted playsInline className="w-full h-full object-cover" /><div className={`absolute inset-0 bg-black/40 transition-colors duration-1000 ${introStep === 'INPUT' ? 'bg-black/70' : ''}`}></div></div>
+      {/* ФОН: Уменьшен зум при переходе с 2.5 до 1.1 */}
+      <div className={`fixed inset-0 z-0 transition-all duration-[1500ms] ${screen === 'HALLWAY' ? 'opacity-100' : 'opacity-0'} ${introStep === 'TRANSITION' ? 'scale-[1.1] blur-sm' : 'scale-100'}`}><video src={ASSETS.vid_partners} autoPlay loop muted playsInline className="w-full h-full object-cover" /><div className={`absolute inset-0 bg-black/40 transition-colors duration-1000 ${introStep === 'INPUT' ? 'bg-black/70' : ''}`}></div></div>
       <div className={`fixed inset-0 z-0 transition-opacity duration-1000 ${screen === 'OFFICE' ? 'opacity-100' : 'opacity-0'}`}><video src={ASSETS.vid_table} autoPlay loop muted playsInline className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/60"></div></div>
 
       {screen === 'HALLWAY' && (
         <div className="relative z-10 w-full h-full flex flex-col overflow-y-auto">
           {introStep === 'HERO' && (
-            <div className="flex-grow flex flex-col items-center justify-center gap-8 p-6">
+            <div className="flex-grow flex flex-col items-center justify-center gap-8 p-6 relative">
+               {/* КНОПКА "Как установить" */}
+               <button onClick={() => setShowInstallHelp(true)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center border border-[#D4AF37]/50 rounded-full text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transition-colors z-50" title="Как установить иконку">
+                 <span className="text-sm font-bold">i</span>
+               </button>
+
                <div className="flex gap-4 md:gap-12 mt-auto"><button onClick={() => { setConsultant('VIP'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#FFD700]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#FFD700] hover:text-black transition-all flex flex-col items-center gap-1 group"><span className="text-xl">🦁</span><span className="text-[#FFD700] group-hover:text-black font-bold text-xs tracking-widest uppercase">МЕССИР</span></button><button onClick={() => { setConsultant('STANDARD'); setIntroStep('LAYOUT'); }} className="px-6 py-4 border border-[#D4AF37]/50 bg-black/60 backdrop-blur-md rounded-xl hover:bg-[#D4AF37] hover:text-black transition-all flex flex-col items-center gap-1 group"><span className="text-xl">🦊</span><span className="text-[#D4AF37] group-hover:text-black font-bold text-xs tracking-widest uppercase">МАРГО</span></button></div>
                <div className="text-center"><h1 className="text-3xl md:text-5xl font-bold text-[#D4AF37] font-cinzel tracking-widest">PSY TAROT</h1><p className="text-[10px] md:text-xs uppercase tracking-[0.4em] opacity-80 mt-1">Неправильная психология</p></div>
                <div className="mb-auto mt-8 flex flex-wrap justify-center gap-3"><a href={LINKS.MASTER} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/40 rounded-full text-[10px] text-[#D4AF37] uppercase tracking-widest font-bold">Связь с Мастером</a><a href={LINKS.COMMUNITY} target="_blank" rel="noreferrer" className="px-4 py-2 bg-white/5 border border-white/20 rounded-full text-[10px] text-gray-300 uppercase tracking-widest hover:text-white">Комьюнити</a></div>
@@ -256,8 +264,6 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex-1 flex flex-col min-h-0">
-             
-             {/* ЗОНА КАРТ (Высота 55% при раскладе) */}
              <div className={`flex flex-col items-center justify-center transition-all duration-500 ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[55%] min-h-[200px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}>
                <div ref={layoutRef} className="w-full h-full p-2 flex items-center justify-center overflow-hidden">
                  {RenderLayout()}
