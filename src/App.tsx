@@ -197,27 +197,29 @@ const App: React.FC = () => {
         </div>
       );
     }
-    // 2 карты
+    
+    // 2 карты (ОТНОШЕНИЯ) - ИСПРАВЛЕНО: Уменьшены на ~20% (было 65%, стало 52%)
     if (appMode === 'RELATIONSHIPS') {
       return (
         <div className="flex justify-center gap-4 h-full items-center px-4">
-          <div className="h-[65%] max-h-[350px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div>
-          <div className="h-[65%] max-h-[350px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div>
+          <div className="h-[52%] max-h-[320px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div>
+          <div className="h-[52%] max-h-[320px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div>
         </div>
       );
     }
-    // 3 карты
+    
+    // 3 карты (СУДЬБА) - ИСПРАВЛЕНО: Уменьшены значительно, чтобы влезть в ширину (было 55%, стало 36%)
     if (appMode === 'FATE') {
       return (
         <div className="flex justify-center gap-2 h-full items-center px-2">
-          <div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div>
-          <div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div>
-          <div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[2]} /></div>
+          <div className="h-[36%] max-h-[250px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div>
+          <div className="h-[36%] max-h-[250px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div>
+          <div className="h-[36%] max-h-[250px] aspect-[2/3]"><CardImage card={selectedCards[2]} /></div>
         </div>
       );
     }
 
-    // 4 карты (Адаптив: столбик на мобильном, строка на ПК)
+    // 4 карты (ФИНАНСЫ) - Адаптив
     if (appMode === 'FINANCE') {
       return (
         <div className="h-full w-full flex flex-col items-center justify-start pt-1 gap-1 md:flex-row md:justify-center md:items-center md:gap-4 md:max-w-lg md:mx-auto">
