@@ -23,24 +23,29 @@ const LINKS = {
 };
 
 const App: React.FC = () => {
+  // --- СОСТОЯНИЯ ---
   const [screen, setScreen] = useState<Screen>('HALLWAY');
   const [introStep, setIntroStep] = useState<IntroStep>('HERO');
+  
   const [consultant, setConsultant] = useState<ConsultantType>('STANDARD');
   const [appMode, setAppMode] = useState<AppMode>('RELATIONSHIPS');
   const [userProblem, setUserProblem] = useState('');
   
+  // Карты
   const [selectedCards, setSelectedCards] = useState<(TarotCard | null)[]>([null]);
   const [cardsRevealed, setCardsRevealed] = useState(false);
   const [analysisStep, setAnalysisStep] = useState<'TABLE' | 'RESULT'>('TABLE');
   const [zoomedCard, setZoomedCard] = useState<TarotCard | null>(null); 
   const layoutRef = useRef<HTMLDivElement>(null); 
   
+  // Результат и Аудио
   const [resultText, setResultText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // --- НАСТРОЙКИ ---
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (link) link.href = ASSETS.img_favicon;
@@ -53,16 +58,20 @@ const App: React.FC = () => {
       document.head.appendChild(metaApple);
     }
     metaApple.setAttribute('content', "yes");
+
     document.body.style.overscrollBehavior = "none";
     document.body.style.backgroundColor = "black";
   }, []);
 
+  // Автоплей (попытка)
   useEffect(() => {
     if (audioUrl && audioRef.current) {
         audioRef.current.play().catch(() => {});
     }
   }, [audioUrl]);
 
+  // --- ФУНКЦИИ ---
+  
   const handleCopyText = () => {
     const cardNames = selectedCards.map(c => c?.name).join(', ');
     const fullText = `🔮 Расклад: ${appMode}\n🃏 Карты: ${cardNames}\n\n${resultText}\n\n👉 Неправильная Психология`;
@@ -72,11 +81,11 @@ const App: React.FC = () => {
 
   const handleDownloadTextFile = () => {
     const cardNames = selectedCards.map(c => c?.name).join(', ');
-    const fullText = `🔮 РАСКЛАД: ${appMode}\n🃏 КАРТЫ: ${cardNames}\n\n📝 ТОЛКОВАНИЕ:\n${resultText}\n\n👉 Неправильная Психология`;
+    const fullText = `🔮 РАСКЛАД: ${appMode}\n🃏 КАРТЫ: ${cardNames}\n\n📝 ТОЛКОВАНИЕ:\n${resultText}\n\n👉 Неправильная Психология (https://astral-hero.vercel.app)`;
     const blob = new Blob([fullText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = `prediction.txt`;
+    link.download = `prediction_${new Date().toISOString().slice(0,10)}.txt`;
     link.href = url;
     link.click();
   };
@@ -138,6 +147,8 @@ const App: React.FC = () => {
     if (!resultText || isGeneratingVoice) return;
     setIsGeneratingVoice(true);
     const cleanText = resultText.replace(/[#*]/g, ''); 
+    
+    // Используем наш прокси-сервис
     const url = await speakText(cleanText, consultant, appMode as any); 
     if (url) {
         setAudioUrl(url);
@@ -149,23 +160,74 @@ const App: React.FC = () => {
     setIntroStep('HERO'); setScreen('HALLWAY'); setResultText(''); setUserProblem(''); setAudioUrl(null); setConsultant('STANDARD'); setAnalysisStep('TABLE'); setCardsRevealed(false);
   };
 
-  // --- ИСПРАВЛЕНИЕ: КАРТЫ НЕ ОБРЕЗАЮТСЯ ---
+  // --- КОМПОНЕНТ КАРТЫ ---
   const CardImage = ({ card }: { card: TarotCard | null }) => {
     if (!cardsRevealed) return <img src={ASSETS.img_cardback} className="w-full h-full object-contain rounded shadow-lg animate-pulse" alt="Cover" />;
     return (
       <div className="w-full h-full relative animate-flip-in cursor-zoom-in group" onClick={() => setZoomedCard(card)}>
-        {/* object-contain ГАРАНТИРУЕТ, что карта видна целиком */}
         <img src={card?.imageUrl} className="w-full h-full object-contain drop-shadow-2xl" alt={card?.name} crossOrigin="anonymous" />
       </div>
     );
   };
 
+  // --- ИСПРАВЛЕННЫЕ РАСКЛАДЫ (УМЕНЬШЕННЫЕ РАЗМЕРЫ) ---
   const RenderLayout = () => {
-    if (appMode === 'BLITZ') return <div className="w-full h-full max-w-xs mx-auto p-4"><CardImage card={selectedCards[0]} /></div>;
-    if (appMode === 'RELATIONSHIPS') return <div className="flex justify-center gap-2 h-full items-center px-2"><div className="h-[80%] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div><div className="h-[80%] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div></div>;
-    if (appMode === 'FATE') return <div className="flex justify-center gap-1 h-full items-center px-1"><div className="h-[70%] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div><div className="h-[70%] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div><div className="h-[70%] aspect-[2/3]"><CardImage card={selectedCards[2]} /></div></div>;
-    if (appMode === 'FINANCE') return <div className="grid grid-cols-2 gap-2 h-[80%] aspect-square mx-auto items-center"><CardImage card={selectedCards[0]} /><CardImage card={selectedCards[1]} /><CardImage card={selectedCards[2]} /><CardImage card={selectedCards[3]} /></div>;
-    if (appMode === 'CROSS') return <div className="relative w-full h-full max-w-sm mx-auto p-2"><div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[25%] h-[35%] z-20"><CardImage card={selectedCards[0]} /></div><div className="absolute top-1/2 left-[10%] -translate-y-1/2 w-[22%] h-[30%]"><CardImage card={selectedCards[1]} /></div><div className="absolute top-1/2 right-[10%] -translate-y-1/2 w-[22%] h-[30%]"><CardImage card={selectedCards[2]} /></div><div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[22%] h-[30%]"><CardImage card={selectedCards[3]} /></div><div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-[22%] h-[30%]"><CardImage card={selectedCards[4]} /></div></div>;
+    // 1. БЛИЦ (1 карта) - Работает отлично
+    if (appMode === 'BLITZ') {
+        return (
+            <div className="w-full h-full max-w-xs mx-auto p-4 flex items-center justify-center">
+                <div className="h-[85%] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div>
+            </div>
+        );
+    }
+
+    // 2. ОТНОШЕНИЯ (2 карты) - Уменьшил высоту до 65%
+    if (appMode === 'RELATIONSHIPS') {
+        return (
+            <div className="flex justify-center gap-4 h-full items-center px-4">
+                <div className="h-[65%] max-h-[350px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div>
+                <div className="h-[65%] max-h-[350px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div>
+            </div>
+        );
+    }
+
+    // 3. СУДЬБА (3 карты) - Уменьшил высоту до 55%, чтобы влезли по ширине
+    if (appMode === 'FATE') {
+        return (
+            <div className="flex justify-center gap-2 h-full items-center px-2">
+                <div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[0]} /></div>
+                <div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[1]} /></div>
+                <div className="h-[55%] max-h-[300px] aspect-[2/3]"><CardImage card={selectedCards[2]} /></div>
+            </div>
+        );
+    }
+
+    // 4. ФИНАНСЫ (4 карты) - Уменьшил сетку до 60%
+    if (appMode === 'FINANCE') {
+        return (
+            <div className="grid grid-cols-2 gap-3 h-[60%] max-h-[350px] aspect-square mx-auto items-center justify-items-center">
+                <CardImage card={selectedCards[0]} />
+                <CardImage card={selectedCards[1]} />
+                <CardImage card={selectedCards[2]} />
+                <CardImage card={selectedCards[3]} />
+            </div>
+        );
+    }
+
+    // 5. КРЕСТ (5 карт) - Работает отлично
+    if (appMode === 'CROSS') {
+        return (
+            <div className="relative w-full h-full max-w-sm mx-auto p-2 flex items-center justify-center">
+                <div className="relative w-full aspect-[3/4]">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] shadow-2xl scale-110 z-20"><CardImage card={selectedCards[0]} /></div>
+                    <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[1]} /></div>
+                    <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[2]} /></div>
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[3]} /></div>
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[28%] opacity-90"><CardImage card={selectedCards[4]} /></div>
+                </div>
+            </div>
+        );
+    }
     return null;
   };
 
@@ -193,9 +255,9 @@ const App: React.FC = () => {
       {screen === 'OFFICE' && (
         <div className="relative z-10 w-full h-full flex flex-col overflow-hidden">
           
-          {/* ВЕРХНЯЯ ПАНЕЛЬ С КНОПКОЙ ВЫХОДА (Исправлено для iPhone) */}
+          {/* ВЕРХНЯЯ ПАНЕЛЬ С БОЛЬШОЙ КНОПКОЙ ВЫХОДА */}
           <div className="w-full flex justify-between items-center px-4 pt-14 pb-2 bg-gradient-to-b from-black to-transparent shrink-0 z-30">
-             <button onClick={fullReset} className="px-4 py-2 bg-red-900/40 border border-red-500/30 rounded-full text-xs text-red-200 uppercase font-bold tracking-widest flex items-center gap-2 hover:bg-red-900/60 transition-colors">
+             <button onClick={fullReset} className="px-4 py-2 bg-red-900/40 border border-red-500/30 rounded-full text-xs text-red-200 uppercase font-bold tracking-widest flex items-center gap-2 hover:bg-red-900/60 transition-colors shadow-lg">
                <span>✖</span> ЗАВЕРШИТЬ СЕАНС
              </button>
              <div className="text-[10px] text-[#D4AF37]/60 uppercase tracking-widest font-bold">{appMode}</div>
@@ -203,7 +265,7 @@ const App: React.FC = () => {
 
           <div className="flex-1 flex flex-col min-h-0">
              
-             {/* ЗОНА КАРТ (object-contain для целых карт) */}
+             {/* ЗОНА КАРТ (object-contain для целых карт + новые размеры для 2/3/4) */}
              <div className={`flex flex-col items-center justify-center transition-all duration-500 ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[55%] min-h-[200px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}>
                <div ref={layoutRef} className="w-full h-full p-2 flex items-center justify-center overflow-hidden">
                  {RenderLayout()}
@@ -217,6 +279,7 @@ const App: React.FC = () => {
              {analysisStep === 'RESULT' && (
                 <div className="flex-1 flex flex-col bg-[#050505]/95 min-h-0 border-t border-[#333]">
                    
+                   {/* ПАНЕЛЬ ПЛЕЕРА */}
                    <div className="min-h-16 shrink-0 border-b border-[#333] flex flex-col justify-center px-4 bg-[#111] py-2 gap-2">
                       <div className="flex justify-between items-center w-full">
                          <div className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${consultant === 'VIP' ? 'bg-[#FFD700]' : 'bg-[#D4AF37]'}`}></div><span className={`text-[10px] font-bold uppercase tracking-widest ${consultant === 'VIP' ? 'text-[#FFD700]' : 'text-[#D4AF37]'}`}>{consultant === 'VIP' ? 'МЕССИР' : 'МАРГО'}</span></div>
@@ -240,6 +303,7 @@ const App: React.FC = () => {
                       </div>
                    </div>
 
+                   {/* ТЕКСТ (КРУПНЫЙ) */}
                    <div className="flex-1 overflow-y-auto p-6 text-xl leading-loose text-gray-300 font-serif pb-20">
                       {isLoading ? (
                          <div className="flex flex-col items-center justify-center h-full gap-2"><div className="w-6 h-6 border-2 border-dashed border-[#D4AF37] rounded-full animate-spin"></div><span className="text-xs text-[#D4AF37]">Связь...</span></div>
