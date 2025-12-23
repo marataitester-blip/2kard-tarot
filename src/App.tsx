@@ -38,16 +38,14 @@ const App: React.FC = () => {
   const [zoomedCard, setZoomedCard] = useState<TarotCard | null>(null); 
   const layoutRef = useRef<HTMLDivElement>(null); 
   
-  // Результат и Аудио
+  // Результат
   const [resultText, setResultText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null); // Ссылка на плеер
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   // --- ЭФФЕКТЫ ---
-  
-  // Настройки для iPhone (PWA)
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (link) link.href = ASSETS.img_favicon;
@@ -65,14 +63,13 @@ const App: React.FC = () => {
     document.body.style.backgroundColor = "black";
   }, []);
 
-  // Автоплей звука при появлении (с защитой от сбоев)
+  // Исправленный автоплей (убрана неиспользуемая переменная error)
   useEffect(() => {
     if (audioUrl && audioRef.current) {
-        // Пытаемся запустить звук. Если iPhone блокирует, пользователь нажмет сам.
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
-            playPromise.catch((error) => {
-                console.log("Автоплей заблокирован (это норма для iPhone). Ждем клика пользователя.");
+            playPromise.catch(() => {
+                console.log("Автоплей заблокирован iPhone. Ждем клика.");
             });
         }
     }
@@ -112,8 +109,14 @@ const App: React.FC = () => {
 
   const handleShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: 'Tarot', text: 'Мой расклад', url: window.location.href }); } catch (e) {}
-    } else handleCopyText();
+      try { 
+        await navigator.share({ title: 'Tarot', text: 'Мой расклад', url: window.location.href }); 
+      } catch (e) {
+        console.log(e); // Используем переменную, чтобы линтер не ругался
+      }
+    } else {
+      handleCopyText();
+    }
   };
 
   const handleLayoutSelect = (selectedMode: AppMode) => {
@@ -148,7 +151,12 @@ const App: React.FC = () => {
     try {
       const text = await analyzeRelationship(selectedCards as TarotCard[], userProblem, appMode, activeConsultant);
       setResultText(text);
-    } catch (e) { setResultText("Ошибка связи. Попробуйте еще раз."); } finally { setIsLoading(false); }
+    } catch (e) { 
+      console.error(e); 
+      setResultText("Ошибка связи. Попробуйте еще раз."); 
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   const handleGenerateAudio = async () => {
@@ -164,6 +172,7 @@ const App: React.FC = () => {
             alert("Голос не сформирован. Повторите.");
         }
     } catch (e) {
+        console.error(e);
         alert("Ошибка озвучки.");
     } finally {
         setIsGeneratingVoice(false);
@@ -217,7 +226,7 @@ const App: React.FC = () => {
         <div className="relative z-10 w-full h-full flex flex-col overflow-hidden">
           <div className="w-full flex justify-between items-center px-4 py-2 bg-black/20 shrink-0 h-10"><button onClick={fullReset} className="text-[10px] text-gray-400 hover:text-[#D4AF37] uppercase tracking-widest flex items-center gap-2"><span>✕</span> Выход</button><div className="text-[9px] text-[#D4AF37]/60 uppercase tracking-widest">{appMode}</div></div>
           <div className="flex-1 flex flex-col min-h-0">
-             <div className={`flex flex-col items-center justify-center transition-all duration-500 ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[65%] min-h-[220px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}><div ref={layoutRef} className="w-full h-full p-2 flex items-center justify-center overflow-hidden">{RenderLayout()}</div></div>
+             <div className={`flex flex-col items-center justify-center transition-all duration-500 ${analysisStep === 'TABLE' ? 'flex-1' : 'h-[62%] min-h-[220px] shrink-0 border-b border-[#D4AF37]/20 bg-black/10'}`}><div ref={layoutRef} className="w-full h-full p-2 flex items-center justify-center overflow-hidden">{RenderLayout()}</div></div>
              <div className="shrink-0 w-full flex justify-center items-center py-2 bg-gradient-to-t from-black via-black/50 to-transparent z-20">
                 {!cardsRevealed && analysisStep === 'TABLE' && <button onClick={handleRevealCards} className="px-6 py-3 bg-[#D4AF37] text-black font-bold uppercase tracking-widest rounded-full shadow-lg animate-pulse">Вскрыть</button>}
                 {cardsRevealed && analysisStep === 'TABLE' && <button onClick={handleGetInterpretation} className={`px-6 py-3 font-bold uppercase tracking-widest rounded-full shadow-lg border border-white/20 ${consultant === 'VIP' ? 'bg-gradient-to-r from-[#FFD700] to-black text-[#FFD700]' : 'bg-gradient-to-r from-[#D4AF37] to-black text-[#D4AF37]'}`}>{consultant === 'VIP' ? 'Слово Мессира' : 'Мнение Марго'}</button>}
@@ -225,7 +234,6 @@ const App: React.FC = () => {
              {analysisStep === 'RESULT' && (
                 <div className="flex-1 flex flex-col bg-[#050505]/95 min-h-0 border-t border-[#333]">
                    
-                   {/* ПАНЕЛЬ ИНСТРУМЕНТОВ */}
                    <div className="min-h-16 shrink-0 border-b border-[#333] flex flex-col justify-center px-4 bg-[#111] py-2 gap-2">
                       <div className="flex justify-between items-center w-full">
                          <div className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${consultant === 'VIP' ? 'bg-[#FFD700]' : 'bg-[#D4AF37]'}`}></div><span className={`text-[10px] font-bold uppercase tracking-widest ${consultant === 'VIP' ? 'text-[#FFD700]' : 'text-[#D4AF37]'}`}>{consultant === 'VIP' ? 'МЕССИР' : 'МАРГО'}</span></div>
@@ -236,8 +244,6 @@ const App: React.FC = () => {
                             <button onClick={handleShare} className="text-gray-400 p-1" title="Поделиться">🔗</button>
                          </div>
                       </div>
-
-                      {/* ПЛЕЕР (СВЕТЛАЯ ПОДЛОЖКА ДЛЯ IPHONE) */}
                       <div className="w-full">
                          {!audioUrl ? (
                            <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className={`w-full py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${consultant === 'VIP' ? 'bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/40' : 'bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40'}`}>
@@ -245,14 +251,12 @@ const App: React.FC = () => {
                            </button>
                          ) : (
                            <div className="bg-[#E0E0E0] rounded-lg p-1 flex justify-center shadow-inner">
-                              {/* НАТИВНЫЙ ПЛЕЕР */}
                               <audio ref={audioRef} controls playsInline src={audioUrl} className="w-full h-8" />
                            </div>
                          )}
                       </div>
                    </div>
 
-                   {/* ТЕКСТ (КРУПНЫЙ) */}
                    <div className="flex-1 overflow-y-auto p-6 text-lg text-gray-300 leading-relaxed font-serif pb-20">
                       {isLoading ? (
                          <div className="flex flex-col items-center justify-center h-full gap-2"><div className="w-6 h-6 border-2 border-dashed border-[#D4AF37] rounded-full animate-spin"></div><span className="text-xs text-[#D4AF37]">Связь...</span></div>
