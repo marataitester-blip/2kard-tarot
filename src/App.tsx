@@ -55,9 +55,13 @@ const App: React.FC = () => {
   const handleLayoutSelect = (selectedMode: AppMode) => {
     setAppMode(selectedMode);
     
-    // Подготовка слотов для карт
+    // Подготовка слотов для карт (Строго по ТЗ)
     const countMap: Record<AppMode, number> = {
-        'BLITZ': 1, 'RELATIONSHIPS': 2, 'FATE': 3, 'FINANCE': 4, 'CROSS': 5
+        'BLITZ': 1,        // 1 карта
+        'RELATIONSHIPS': 2,// 2 карты
+        'FATE': 3,         // 3 карты
+        'FINANCE': 4,      // 4 карты
+        'CROSS': 5         // 5 карт
     };
     setSelectedCards(new Array(countMap[selectedMode]).fill(null));
     
@@ -66,16 +70,11 @@ const App: React.FC = () => {
 
   // Шаг 3: Ввод вопроса -> ZOOM -> Кабинет
   const handleStartSession = () => {
-    // 1. Запускаем анимацию перехода (Zoom)
     setIntroStep('TRANSITION');
-    
-    // 2. Ждем окончания анимации и переключаем экран
     setTimeout(() => {
       setScreen('OFFICE');
       setAnalysisStep('SELECTION');
-      // Если режим RANDOM, можно сразу раздать карты (опционально)
-      // handleShuffle(); 
-    }, 1500); // 1.5 секунды на зум
+    }, 1500); 
   };
 
   // Возврат назад (Сброс)
@@ -123,7 +122,7 @@ const App: React.FC = () => {
     setIsGeneratingVoice(false);
   };
 
-  // --- РЕНДЕР КАРТ ---
+  // --- РЕНДЕР КАРТ (UI) ---
   const renderCardMedia = (card: TarotCard | null) => {
     if (!card) {
        if (mode === 'RANDOM') return <img src={ASSETS.img_cardback} className="w-full h-full object-cover rounded-lg" />;
@@ -134,7 +133,7 @@ const App: React.FC = () => {
 
   const CardSlot = ({ index, label, className }: { index: number, label: string, className?: string }) => (
     <div className={`flex flex-col gap-2 ${className || ''}`}>
-      <span className="text-[9px] text-center text-[#D4AF37] uppercase tracking-wider h-4 flex items-center justify-center font-bold">{label}</span>
+      <span className="text-[9px] text-center text-[#D4AF37] uppercase tracking-wider h-4 flex items-center justify-center font-bold text-shadow">{label}</span>
       {mode === 'RANDOM' ? (
         <div className="aspect-[2/3] rounded-lg relative w-full shadow-lg">
            {renderCardMedia(selectedCards[index])}
@@ -160,29 +159,74 @@ const App: React.FC = () => {
     </div>
   );
 
+  // Сетки раскладов (ИСПРАВЛЕНО: все 5 вариантов)
   const renderLayout = () => {
-    if (appMode === 'BLITZ') return <div className="w-32 mx-auto"><CardSlot index={0} label="Ответ" /></div>;
-    if (appMode === 'RELATIONSHIPS') return <div className="flex justify-center gap-4"><div className="w-28"><CardSlot index={0} label="ОН" /></div><div className="w-28"><CardSlot index={1} label="ОНА" /></div></div>;
-    if (appMode === 'FATE') return <div className="flex justify-center gap-2"><div className="w-24"><CardSlot index={0} label="Сит." /></div><div className="w-24"><CardSlot index={1} label="Акт." /></div><div className="w-24"><CardSlot index={2} label="Итог" /></div></div>;
-    if (appMode === 'FINANCE') return <div className="grid grid-cols-2 gap-4 px-8 max-w-sm mx-auto"><CardSlot index={0} label="Актив" /><CardSlot index={1} label="Поток" /><CardSlot index={2} label="План" /><CardSlot index={3} label="Реал." /></div>;
-    if (appMode === 'CROSS') return (
-        <div className="relative w-full max-w-[300px] h-[350px] mx-auto">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20"><CardSlot index={3} label="Явное" /></div>
-            <div className="absolute top-[110px] w-full flex justify-between px-2">
-                <div className="w-20"><CardSlot index={1} label="Причина" /></div>
-                <div className="w-20 -mt-2 z-10 scale-110"><CardSlot index={0} label="Суть" /></div>
-                <div className="w-20"><CardSlot index={2} label="Итог" /></div>
+    // 1. БЛИЦ
+    if (appMode === 'BLITZ') {
+        return (
+            <div className="flex justify-center">
+                <div className="w-32"><CardSlot index={0} label="Ответ / Суть" /></div>
             </div>
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-20"><CardSlot index={4} label="Скрытое" /></div>
-        </div>
-    );
+        );
+    }
+    // 2. ОТНОШЕНИЯ
+    if (appMode === 'RELATIONSHIPS') {
+        return (
+            <div className="flex justify-center gap-6">
+                <div className="w-28"><CardSlot index={0} label="ОН" /></div>
+                <div className="w-28"><CardSlot index={1} label="ОНА" /></div>
+            </div>
+        );
+    }
+    // 3. СУДЬБА (SAR)
+    if (appMode === 'FATE') {
+        return (
+            <div className="flex justify-center gap-2">
+                <div className="w-24"><CardSlot index={0} label="Ситуация" /></div>
+                <div className="w-24"><CardSlot index={1} label="Действие" /></div>
+                <div className="w-24"><CardSlot index={2} label="Итог" /></div>
+            </div>
+        );
+    }
+    // 4. ФИНАНСЫ
+    if (appMode === 'FINANCE') {
+        return (
+            <div className="grid grid-cols-2 gap-4 px-8 max-w-sm mx-auto">
+                <CardSlot index={0} label="Актив" />
+                <CardSlot index={1} label="Поток" />
+                <CardSlot index={2} label="План" />
+                <CardSlot index={3} label="Реальность" />
+            </div>
+        );
+    }
+    // 5. КРЕСТ
+    if (appMode === 'CROSS') {
+        return (
+            <div className="relative w-full max-w-[320px] h-[380px] mx-auto mt-4">
+                {/* Верх (Явное) */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20">
+                    <CardSlot index={3} label="Явное" />
+                </div>
+                {/* Центр Ряд (Причина - Суть - Будущее) */}
+                <div className="absolute top-[120px] w-full flex justify-between px-1">
+                    <div className="w-20"><CardSlot index={1} label="Причина" /></div>
+                    <div className="w-20 -mt-2 z-10 scale-110"><CardSlot index={0} label="Ситуация" /></div>
+                    <div className="w-20"><CardSlot index={2} label="Будущее" /></div>
+                </div>
+                {/* Низ (Скрытое) */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-20">
+                    <CardSlot index={4} label="Скрытое" />
+                </div>
+            </div>
+        );
+    }
   };
 
-  // --- UI КОМПОНЕНТЫ ---
+  // --- UI ---
   return (
     <div className="min-h-screen font-serif flex flex-col relative overflow-hidden text-[#E0E0E0] selection:bg-[#D4AF37] selection:text-black">
       
-      {/* 1. ГЛОБАЛЬНЫЙ ФОН (HALLWAY) с эффектом ZOOM */}
+      {/* ФОНЫ */}
       <div 
         className={`fixed inset-0 z-0 transition-all duration-[1500ms] ease-in-out
           ${screen === 'HALLWAY' ? 'opacity-100' : 'opacity-0 pointer-events-none'}
@@ -193,20 +237,19 @@ const App: React.FC = () => {
          <div className={`absolute inset-0 bg-black/40 transition-colors duration-1000 ${introStep === 'INPUT' ? 'bg-black/70' : ''}`}></div>
       </div>
 
-      {/* 2. ФОН КАБИНЕТА (OFFICE) */}
       <div className={`fixed inset-0 z-0 transition-opacity duration-1000 ${screen === 'OFFICE' ? 'opacity-100' : 'opacity-0'}`}>
          {screen === 'OFFICE' && <video src={ASSETS.vid_table} autoPlay loop muted playsInline className="w-full h-full object-cover" />}
          <div className="absolute inset-0 bg-black/60"></div> 
       </div>
 
-      {/* --- ИНТЕРФЕЙС (STEP-BY-STEP) --- */}
+      {/* ИНТЕРФЕЙС */}
       <div className="relative z-10 flex-grow flex flex-col items-center min-h-screen w-full">
         
         {/* --- СЦЕНА 1: ПРИХОЖАЯ --- */}
         {screen === 'HALLWAY' && (
           <div className="w-full h-screen flex flex-col items-center justify-between py-10 px-6">
             
-            {/* ШАГ 1: ВЫБОР ГЕРОЯ (НИЗ ЭКРАНА) */}
+            {/* ШАГ 1: ВЫБОР ГЕРОЯ */}
             {introStep === 'HERO' && (
               <div className="flex-grow flex flex-col justify-end w-full max-w-4xl pb-10 animate-fade-in">
                  <div className="text-center mb-8">
@@ -217,14 +260,11 @@ const App: React.FC = () => {
                  </div>
 
                  <div className="flex items-center justify-between w-full">
-                    {/* Кнопка Мессир */}
                     <div onClick={() => handleHeroSelect('VIP')} className="group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95">
                        <div className="px-6 py-4 border border-[#FFD700]/50 bg-black/60 backdrop-blur-md rounded-lg group-hover:bg-[#FFD700] transition-colors shadow-[0_0_20px_rgba(255,215,0,0.2)]">
                           <span className="text-[#FFD700] group-hover:text-black font-bold text-xs tracking-widest uppercase">МЕССИР</span>
                        </div>
                     </div>
-                    
-                    {/* Кнопка Марго */}
                     <div onClick={() => handleHeroSelect('STANDARD')} className="group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95">
                        <div className="px-6 py-4 border border-[#D4AF37]/50 bg-black/60 backdrop-blur-md rounded-lg group-hover:bg-[#D4AF37] transition-colors shadow-[0_0_20px_rgba(212,175,55,0.2)]">
                           <span className="text-[#D4AF37] group-hover:text-black font-bold text-xs tracking-widest uppercase">МАРГО</span>
@@ -234,33 +274,48 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {/* ШАГ 2: ВЫБОР РАСКЛАДА (СТЕКЛО ПО ЦЕНТРУ) */}
+            {/* ШАГ 2: ВЫБОР РАСКЛАДА (ВСЕ 5 ВАРИАНТОВ) */}
             {introStep === 'LAYOUT' && (
               <div className="absolute inset-0 flex items-center justify-center p-4 animate-fade-in">
-                 <div className="w-full max-w-sm bg-[#0a0a0a]/60 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl flex flex-col gap-4">
-                    <h2 className="text-center text-[#D4AF37] font-cinzel text-xl tracking-widest mb-4">
+                 <div className="w-full max-w-sm bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-2xl flex flex-col gap-3 max-h-[80vh] overflow-y-auto">
+                    <h2 className="text-center text-[#D4AF37] font-cinzel text-lg tracking-widest mb-2 sticky top-0 bg-[#0a0a0a] py-2 z-10">
                       {consultant === 'VIP' ? 'ЧТО ВАС ТРЕВОЖИТ?' : 'О ЧЕМ ПОГОВОРИМ?'}
                     </h2>
                     
-                    <button onClick={() => handleLayoutSelect('RELATIONSHIPS')} className="w-full py-4 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg transition-all text-sm uppercase tracking-widest font-bold text-gray-200">
-                      ❤️ Отношения
+                    {/* 1. БЛИЦ */}
+                    <button onClick={() => handleLayoutSelect('BLITZ')} className="w-full py-3 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg text-xs uppercase tracking-widest font-bold text-gray-200 text-left px-4 flex justify-between items-center">
+                      <span>⚡ Блиц (1 карта)</span>
                     </button>
-                    <button onClick={() => handleLayoutSelect('FINANCE')} className="w-full py-4 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg transition-all text-sm uppercase tracking-widest font-bold text-gray-200">
-                      💸 Финансы
+
+                    {/* 2. ОТНОШЕНИЯ */}
+                    <button onClick={() => handleLayoutSelect('RELATIONSHIPS')} className="w-full py-3 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg text-xs uppercase tracking-widest font-bold text-gray-200 text-left px-4 flex justify-between items-center">
+                      <span>❤️ Отношения (2 карты)</span>
                     </button>
-                    <button onClick={() => handleLayoutSelect('FATE')} className="w-full py-4 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg transition-all text-sm uppercase tracking-widest font-bold text-gray-200">
-                      🔮 Судьба (SAR)
+
+                    {/* 3. СУДЬБА */}
+                    <button onClick={() => handleLayoutSelect('FATE')} className="w-full py-3 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg text-xs uppercase tracking-widest font-bold text-gray-200 text-left px-4 flex justify-between items-center">
+                      <span>🔮 Судьба (3 карты)</span>
+                    </button>
+
+                    {/* 4. ФИНАНСЫ */}
+                    <button onClick={() => handleLayoutSelect('FINANCE')} className="w-full py-3 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg text-xs uppercase tracking-widest font-bold text-gray-200 text-left px-4 flex justify-between items-center">
+                      <span>💸 Финансы (4 карты)</span>
+                    </button>
+
+                    {/* 5. КРЕСТ */}
+                    <button onClick={() => handleLayoutSelect('CROSS')} className="w-full py-3 bg-white/5 hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37] rounded-lg text-xs uppercase tracking-widest font-bold text-gray-200 text-left px-4 flex justify-between items-center">
+                      <span>✝️ Крест (5 карт)</span>
                     </button>
                     
-                    <button onClick={() => setIntroStep('HERO')} className="mt-4 text-xs text-gray-500 hover:text-white text-center">Назад</button>
+                    <button onClick={() => setIntroStep('HERO')} className="mt-2 text-xs text-gray-500 hover:text-white text-center py-2">← Назад к героям</button>
                  </div>
               </div>
             )}
 
-            {/* ШАГ 3: ВВОД ВОПРОСА (ВВЕРХУ ЭКРАНА) */}
+            {/* ШАГ 3: ВВОД ВОПРОСА */}
             {introStep === 'INPUT' && (
-              <div className="absolute inset-0 flex flex-col items-center pt-20 px-4 animate-fade-in bg-black/40 backdrop-blur-[2px]">
-                 <div className="w-full max-w-md bg-[#050505]/80 border border-[#D4AF37]/30 p-6 rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+              <div className="absolute inset-0 flex flex-col items-center pt-20 px-4 animate-fade-in bg-black/60 backdrop-blur-[2px]">
+                 <div className="w-full max-w-md bg-[#050505]/90 border border-[#D4AF37]/30 p-6 rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.8)]">
                     <div className="flex justify-between items-center mb-4">
                        <span className="text-[10px] uppercase text-[#D4AF37] tracking-widest font-bold">{appMode}</span>
                        <button onClick={() => setIntroStep('LAYOUT')} className="text-[10px] text-gray-500">Назад</button>
@@ -282,75 +337,51 @@ const App: React.FC = () => {
                       Начать Сеанс
                     </button>
                  </div>
-                 <p className="mt-4 text-center text-xs text-gray-400 opacity-60">
-                   Нажмите, и мы перейдем в кабинет...
-                 </p>
               </div>
             )}
           </div>
         )}
 
-        {/* --- СЦЕНА 2: КАБИНЕТ (РЕЗУЛЬТАТ) --- */}
+        {/* --- СЦЕНА 2: КАБИНЕТ --- */}
         {screen === 'OFFICE' && (
           <div className="w-full max-w-lg flex flex-col items-center p-4 animate-fade-in pb-20 pt-10">
-            
-            {/* Верхняя панель */}
             <div className="w-full flex justify-between items-center mb-6 px-2">
-               <button onClick={fullReset} className="text-xs text-gray-400 hover:text-[#D4AF37] flex items-center gap-1">
-                 <span>←</span> Выход
-               </button>
+               <button onClick={fullReset} className="text-xs text-gray-400 hover:text-[#D4AF37] flex items-center gap-1"><span>←</span> Выход</button>
                <div className="flex gap-2">
                  <button onClick={() => setMode('RANDOM')} className={`px-2 py-1 text-[9px] border rounded uppercase ${mode === 'RANDOM' ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'border-[#333] text-gray-500'}`}>Random</button>
                  <button onClick={() => setMode('MANUAL')} className={`px-2 py-1 text-[9px] border rounded uppercase ${mode === 'MANUAL' ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'border-[#333] text-gray-500'}`}>Manual</button>
                </div>
             </div>
 
-            {/* ВЫБОР КАРТ */}
             {analysisStep === 'SELECTION' && (
               <div className="w-full flex flex-col items-center gap-8">
-                {/* Расклад */}
-                <div className="w-full scale-100 transition-all">
-                  {renderLayout()}
-                </div>
+                <div className="w-full scale-100 transition-all">{renderLayout()}</div>
                 
                 {mode === 'RANDOM' && (
-                   <button onClick={handleShuffle} className="text-[10px] uppercase text-gray-500 border-b border-dashed border-gray-600 hover:text-white">
-                     Перетасовать карты
-                   </button>
+                   <button onClick={handleShuffle} className="text-[10px] uppercase text-gray-500 border-b border-dashed border-gray-600 hover:text-white">Перетасовать карты</button>
                 )}
 
-                <button 
-                  onClick={runDiagnosis} 
-                  disabled={selectedCards.some(c => c === null)} 
-                  className="w-full max-w-xs py-4 border border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/5 hover:bg-[#D4AF37] hover:text-black uppercase tracking-widest font-bold rounded transition-all backdrop-blur-md shadow-[0_0_20px_rgba(212,175,55,0.1)]"
-                >
+                <button onClick={runDiagnosis} disabled={selectedCards.some(c => c === null)} className="w-full max-w-xs py-4 border border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/5 hover:bg-[#D4AF37] hover:text-black uppercase tracking-widest font-bold rounded transition-all backdrop-blur-md shadow-[0_0_20px_rgba(212,175,55,0.1)]">
                    ВСКРЫТЬ КАРТЫ
                 </button>
               </div>
             )}
 
-            {/* АНАЛИЗ (РЕЗУЛЬТАТ) */}
             {analysisStep === 'ANALYSIS' && (
               <div className="w-full bg-[#050505]/80 backdrop-blur-xl border border-[#D4AF37]/30 p-6 rounded-xl shadow-2xl animate-fade-in">
                  {isLoading ? (
                     <div className="text-center py-12">
                       <div className="w-12 h-12 border-2 border-t-[#D4AF37] border-r-[#D4AF37] border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <span className="text-[#D4AF37] text-xs uppercase tracking-widest animate-pulse block">
-                        {consultant === 'VIP' ? 'Мессир думает...' : 'Марго формулирует...'}
-                      </span>
+                      <span className="text-[#D4AF37] text-xs uppercase tracking-widest animate-pulse block">{consultant === 'VIP' ? 'Мессир думает...' : 'Марго формулирует...'}</span>
                     </div>
                  ) : (
                     <>
-                      {/* Карты (миниатюры) */}
                       <div className="flex justify-center gap-2 mb-6 overflow-x-auto pb-2 border-b border-[#333]">
                         {selectedCards.map((c, i) => (
-                           <div key={i} className="w-8 flex-shrink-0 aspect-[2/3] opacity-80 hover:opacity-100 transition-opacity">
-                             <img src={c?.imageUrl} className="rounded" />
-                           </div>
+                           <div key={i} className="w-8 flex-shrink-0 aspect-[2/3] opacity-80 hover:opacity-100 transition-opacity"><img src={c?.imageUrl} className="rounded" /></div>
                         ))}
                       </div>
 
-                      {/* Плеер */}
                       <div className="mb-6">
                          {!audioUrl ? (
                            <button onClick={handleGenerateAudio} disabled={isGeneratingVoice} className="w-full py-3 border border-dashed border-[#555] text-[10px] tracking-widest text-gray-400 hover:text-[#D4AF37] hover:border-[#D4AF37] uppercase rounded transition-colors flex justify-center items-center gap-2">
@@ -364,14 +395,8 @@ const App: React.FC = () => {
                          )}
                       </div>
 
-                      {/* Текст */}
-                      <div className="whitespace-pre-wrap text-sm text-gray-300 leading-relaxed pl-4 border-l-2 border-[#D4AF37]/50 mb-8 italic font-serif">
-                        {resultText}
-                      </div>
-
-                      <button onClick={() => {setAnalysisStep('SELECTION'); setResultText(''); setAudioUrl(null);}} className="w-full py-4 text-[10px] uppercase tracking-[0.2em] text-gray-500 hover:text-white border-t border-[#333] hover:border-gray-600 transition-colors">
-                        Разобрать еще одну ситуацию
-                      </button>
+                      <div className="whitespace-pre-wrap text-sm text-gray-300 leading-relaxed pl-4 border-l-2 border-[#D4AF37]/50 mb-8 italic font-serif">{resultText}</div>
+                      <button onClick={() => {setAnalysisStep('SELECTION'); setResultText(''); setAudioUrl(null);}} className="w-full py-4 text-[10px] uppercase tracking-[0.2em] text-gray-500 hover:text-white border-t border-[#333] hover:border-gray-600 transition-colors">Разобрать еще одну ситуацию</button>
                     </>
                  )}
               </div>
