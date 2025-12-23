@@ -1,21 +1,30 @@
 import { AppMode } from '../types';
 
-// ⚠️ ВАЖНО: Вставьте сюда ваш ключ OpenAI, если не используете прокси
-const OPENAI_API_KEY = "ВСТАВЬТЕ_СЮДА_ВАШ_КЛЮЧ_OPENAI"; 
+// Vite автоматически подтягивает переменные, начинающиеся с VITE_
+const API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 export const speakText = async (
   text: string, 
   consultant: 'STANDARD' | 'VIP', 
   mode: AppMode
 ): Promise<string | null> => {
+  
+  if (!API_KEY) {
+    console.error("ОШИБКА: Ключ API не найден. Убедитесь, что в Vercel добавлена переменная VITE_OPENAI_API_KEY");
+    alert("Ошибка конфигурации: Нет API ключа.");
+    return null;
+  }
+
   try {
-    // Выбираем голос
+    // Выбираем голос: 
+    // onyx - глубокий мужской (Мессир)
+    // shimmer - звонкий женский (Марго)
     const voice = consultant === 'VIP' ? 'onyx' : 'shimmer'; 
 
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -27,12 +36,16 @@ export const speakText = async (
     });
 
     if (!response.ok) {
-      console.error("TTS API Error:", response.statusText);
+      const errorData = await response.json().catch(() => ({}));
+      console.error("TTS API Error:", response.status, errorData);
       return null;
     }
 
+    // Превращаем ответ в Blob (аудио-файл в памяти)
     const blob = await response.blob();
+    // Создаем ссылку на этот файл, которую понимает <audio> плеер
     const audioUrl = URL.createObjectURL(blob);
+    
     return audioUrl;
 
   } catch (error) {
@@ -42,5 +55,6 @@ export const speakText = async (
 };
 
 export const stopSpeaking = () => {
-  // Для серверного аудио это просто сброс URL в компоненте
+  // Для серверного аудио сброс делается в компоненте через setAudioUrl(null)
+  // Эта функция оставлена для совместимости интерфейсов
 };
