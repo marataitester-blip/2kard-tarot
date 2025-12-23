@@ -1,53 +1,46 @@
 import { AppMode } from '../types';
 
-// Карта голосов
-const VOICES = {
-  MARGO: "shimmer", 
-  MESSIRE: "onyx"   
-};
+// ⚠️ ВАЖНО: Вставьте сюда ваш ключ OpenAI, если не используете прокси
+const OPENAI_API_KEY = "ВСТАВЬТЕ_СЮДА_ВАШ_КЛЮЧ_OPENAI"; 
 
-// Добавили _ перед mode, чтобы TS не ругался на неиспользуемую переменную
 export const speakText = async (
   text: string, 
   consultant: 'STANDARD' | 'VIP', 
-  _mode: AppMode 
+  mode: AppMode
 ): Promise<string | null> => {
   try {
-    const voice = consultant === 'VIP' ? VOICES.MESSIRE : VOICES.MARGO;
-    
-    const cleanText = text.replace(/[*#]/g, '');
+    // Выбираем голос
+    const voice = consultant === 'VIP' ? 'onyx' : 'shimmer'; 
 
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY; 
-    
-    if (!apiKey) {
-        console.warn("Нет ключа API для озвучки");
-        return null;
-    }
-
-    const response = await fetch("https://api.openai.com/v1/audio/speech", {
-      method: "POST",
+    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "tts-1",
-        input: cleanText,
+        model: 'tts-1',
+        input: text,
         voice: voice,
-        speed: consultant === 'VIP' ? 0.9 : 1.0,
+        response_format: 'mp3',
       }),
     });
 
     if (!response.ok) {
-        console.error("TTS Error:", response.statusText);
-        return null;
+      console.error("TTS API Error:", response.statusText);
+      return null;
     }
 
     const blob = await response.blob();
-    return URL.createObjectURL(blob);
+    const audioUrl = URL.createObjectURL(blob);
+    return audioUrl;
 
   } catch (error) {
-    console.error("TTS Service Error:", error);
+    console.error("TTS Network Error:", error);
     return null;
   }
+};
+
+export const stopSpeaking = () => {
+  // Для серверного аудио это просто сброс URL в компоненте
 };
