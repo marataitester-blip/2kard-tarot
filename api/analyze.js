@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Настройки CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -20,22 +19,26 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Получаем сообщения И идентификатор персонажа
     const { messages, character } = req.body;
 
     let selectedModel;
+    let tempSetting; // Настройка креативности
 
-    // --- ЛОГИКА ПАРАЛЛЕЛЬНОГО ВЫБОРА ---
-    // Если фронтенд передал 'VIP' — это Мессир -> Включаем Claude
     if (character === 'VIP') {
+       // --- МЕССИР ---
+       // Модель: Claude 3.5 Sonnet
        selectedModel = "anthropic/claude-3.5-sonnet"; 
-    } 
-    // В остальных случаях (Марго) -> Включаем Qwen
-    else {
+       // Креатив: 0.6 (Чуть выше среднего, баланс между точностью и иронией)
+       tempSetting = 0.6;
+    } else {
+       // --- МАРГО ---
+       // Модель: Qwen 2.5 72B
        selectedModel = "qwen/qwen-2.5-72b-instruct"; 
+       // Креатив: 0.7 (Стандарт для живого общения и практики)
+       tempSetting = 0.7;
     }
 
-    console.log(`Запрос от: ${character || 'Unknown'}. Модель: ${selectedModel}`);
+    console.log(`Персонаж: ${character}. Модель: ${selectedModel}. Temp: ${tempSetting}`);
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -47,7 +50,8 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: selectedModel,
-        messages: messages
+        messages: messages,
+        temperature: tempSetting // Применяем настройку креатива
       })
     });
 
