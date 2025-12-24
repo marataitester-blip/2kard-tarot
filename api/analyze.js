@@ -1,6 +1,6 @@
 // api/analyze.js
 export default async function handler(req, res) {
-  // Разрешаем CORS вручную, чтобы запросы проходили лучше
+  // 1. Настройка заголовков, чтобы браузер не ругался (CORS)
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -9,28 +9,26 @@ export default async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // Обработка предварительного запроса (OPTIONS)
+  // Если браузер просто проверяет связь — отвечаем ОК
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // Получаем ключ
+  // 2. Проверка ключа (используем имя, которое вы дали)
   const apiKey = process.env.VITE_OPENROUTER_KEY;
 
   if (!apiKey) {
-    console.error("CRITICAL: VITE_OPENROUTER_KEY is missing in Vercel Env Vars");
-    return res.status(500).json({ error: 'Сервер не настроен: нет API ключа' });
+    console.error("CRITICAL ERROR: Ключ VITE_OPENROUTER_KEY не найден в Vercel!");
+    return res.status(500).json({ 
+      error: 'Server Error: API Key missing', 
+      hint: 'Добавьте VITE_OPENROUTER_KEY в Settings -> Environment Variables на Vercel'
+    });
   }
 
-  const { messages } = req.body;
-
+  // 3. Отправка запроса в OpenRouter (через сервер, обходя блокировки РФ)
   try {
-    console.log("Sending request to OpenRouter...");
+    const { messages } = req.body;
     
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -41,28 +39,22 @@ export default async function handler(req, res) {
         "X-Title": "Psy Tarot",
       },
       body: JSON.stringify({
-        // Пробуем более стабильную модель, если flash глючит
-        model: "google/gemini-2.0-flash-exp:free", 
+        model: "google/gemini-2.0-flash-exp:free", // Бесплатная, быстрая модель
         messages: messages
       })
     });
 
     const data = await response.json();
 
-    // Если OpenRouter вернул ошибку, возвращаем её текст на клиент
     if (!response.ok) {
-        console.error("OpenRouter Error Details:", JSON.stringify(data));
-        // Возвращаем точное сообщение об ошибке, чтобы ты увидел его в консоли
-        return res.status(response.status).json({ 
-            error: data.error?.message || 'Unknown Provider Error',
-            details: data 
-        });
+        throw new Error(JSON.stringify(data));
     }
 
+    // Возвращаем ответ на ваш сайт
     res.status(200).json(data);
 
   } catch (error) {
-    console.error("Internal Server Error:", error);
-    res.status(500).json({ error: error.message });
+    console.error("OpenRouter Error:", error);
+    res.status(500).json({ error: 'Ошибка связи с ИИ', details: error.message });
   }
 }
