@@ -1,28 +1,21 @@
 import { TarotCard, AppMode } from '../types';
 
-// Оставляем промпт генератор как был, он работает локально
 const generatePrompt = (cards: TarotCard[], problem: string, mode: AppMode, consultant: string): string => {
   const cardNames = cards.map(c => c.name).join(', ');
   
   let roleDescription = "";
   if (consultant === 'VIP') {
-    roleDescription = "Ты - Воланд (Мессир). Твой тон величественный, мистический, слегка ироничный, но мудрый. Используй обращения 'мой друг', 'королева', 'бесценный'. Ты видишь суть вещей. Ты не даешь пустых надежд, но открываешь правду.";
+    roleDescription = "Ты - Воланд (Мессир). Твой тон величественный, мистический, ироничный. Ты видишь суть.";
   } else {
-    roleDescription = "Ты - Марго (Королева Марго). Твой тон дерзкий, страстный, эмоциональный, но поддерживающий. Ты ведьма, которая стала королевой. Ты обращаешься на 'ты', можешь быть резкой, но всегда за клиента.";
+    roleDescription = "Ты - Марго (Королева). Твой тон дерзкий, эмоциональный, но поддерживающий. Ты всегда за клиента.";
   }
 
   return `
     Роль: ${roleDescription}
-    Задача: Проведи анализ расклада Таро.
-    Контекст: Пользователь выбрал расклад "${mode}".
-    Карты: ${cardNames}.
-    Ситуация/Вопрос пользователя: "${problem}".
-    
-    Требования:
-    1. Не пиши вступлений типа "Вот толкование". Сразу начинай в образе.
-    2. Используй форматирование Markdown (жирный шрифт для карт).
-    3. Ответ должен быть кратким, но емким (не более 150 слов).
-    4. Свяжи значения карт с вопросом пользователя.
+    Задача: Краткий анализ Таро (макс 150 слов).
+    Расклад: "${mode}". Карты: ${cardNames}.
+    Вопрос: "${problem}".
+    Отвечай сразу в образе, используй Markdown.
   `;
 };
 
@@ -35,34 +28,29 @@ export const analyzeRelationship = async (
   try {
     const prompt = generatePrompt(cards, problem, mode, consultant);
     
-    // ВАЖНО: Теперь мы стучимся не в openrouter, а в наш локальный /api/analyze
-    // Vercel автоматически перенаправит это в папку api/analyze.js
+    // ВАЖНО: Запрос идет на НАШ сервер (/api/analyze), а не наружу.
+    // Это позволяет работать без VPN.
     const response = await fetch('/api/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp:free",
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ]
+        messages: [{ role: "user", content: prompt }]
       })
     });
 
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Ошибка сети');
+        console.error("Server Error Details:", errorData);
+        throw new Error('Ошибка на сервере предсказаний');
     }
 
     const data = await response.json();
-    return data.choices[0].message.content || "Тумман скрывает ответ...";
+    return data.choices[0].message.content || "Туман скрывает ответ...";
 
   } catch (error) {
     console.error("Error analyzing:", error);
-    return "Связь с астралом прервана. (Ошибка API). Попробуйте позже.";
+    return "Связь с астралом нестабильна. Попробуйте еще раз.";
   }
 };
