@@ -4,6 +4,7 @@ const generatePrompt = (cards: TarotCard[], problem: string, mode: AppMode, cons
   const cardNames = cards.map(c => c.name).join(', ');
   
   let roleDescription = "";
+  // Логика формирования личности
   if (consultant === 'VIP') {
     roleDescription = "Ты - Воланд (Мессир). Твой тон величественный, мистический, ироничный. Ты видишь суть.";
   } else {
@@ -28,15 +29,15 @@ export const analyzeRelationship = async (
   try {
     const prompt = generatePrompt(cards, problem, mode, consultant);
     
-    // ВАЖНО: Запрос идет на НАШ сервер (/api/analyze), а не наружу.
-    // Это позволяет работать без VPN.
+    // ВАЖНО: Мы передаем не только messages, но и character (consultant)
     const response = await fetch('/api/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        messages: [{ role: "user", content: prompt }]
+        messages: [{ role: "user", content: prompt }],
+        character: consultant // <--- ВОТ ЭТОЙ СТРОКИ НЕ ХВАТАЛО
       })
     });
 
