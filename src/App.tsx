@@ -14,7 +14,7 @@ type Screen = 'HALLWAY' | 'OFFICE';
 const ASSETS = {
   vid_partners: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/partners.mp4?v=3",
   vid_table: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/table.mp4?v=3",
-  // Видео-фон для ввода:
+  // Видео-фон для ввода (проверьте, что имя файла точное, с двумя точками, если так на гитхабе)
   vid_input_bg: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot@main/mystic-loop..mp4", 
   img_cardback: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/rubashka.png",
   img_favicon: "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/favicon.png"
@@ -259,7 +259,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* ФОНОВЫЕ ВИДЕО */}
+      {/* ФОНОВЫЕ ВИДЕО (ПАРТНЕРЫ И СТОЛ) */}
       <div className={`fixed inset-0 z-0 transition-all duration-[1500ms] ${screen === 'HALLWAY' ? 'opacity-100' : 'opacity-0'} ${introStep === 'TRANSITION' ? 'scale-[1.1] blur-sm' : 'scale-100'}`}>
         <video src={ASSETS.vid_partners} autoPlay loop muted playsInline className="w-full h-full object-cover" />
         <div className={`absolute inset-0 bg-black/40 transition-colors duration-1000 ${introStep === 'INPUT' ? 'bg-black/70' : ''}`}></div>
@@ -323,14 +323,13 @@ const App: React.FC = () => {
 
           {introStep === 'INPUT' && (
             <div className="absolute inset-0 flex flex-col pt-20 px-4 z-50 items-center overflow-hidden">
-              {/* --- ВИДЕО ФОН ДЛЯ ВВОДА --- */}
+              {/* --- ВИДЕО ФОН ДЛЯ ВВОДА (БЕЗ ЗАТЕМНЕНИЯ) --- */}
               <video 
                 src={ASSETS.vid_input_bg} 
                 autoPlay loop muted playsInline 
                 className="absolute inset-0 w-full h-full object-cover" 
               />
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-              {/* --------------------------- */}
+              {/* Слой затемнения УБРАН, как вы просили */}
 
               <div className="relative z-10 w-full max-w-md bg-[#111] border border-[#D4AF37]/30 p-6 rounded-xl mt-4">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#D4AF37] text-black text-[9px] font-bold px-3 py-1 rounded uppercase tracking-widest">{consultant === 'VIP' ? 'Вопрос Мессиру' : 'Вопрос Марго'}</div>
