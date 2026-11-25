@@ -1,21 +1,17 @@
 import { AppMode } from '../types';
 
-const API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 export const speakText = async (
   text: string, 
   consultant: 'STANDARD' | 'VIP', 
-  mode: AppMode
+  mode: AppMode,
+  lang: "ru" | "en" = "ru"
 ): Promise<string | null> => {
   
   // 1. Используем переменную mode (чтобы не ругался сборщик)
   console.log(`Mode: ${mode}`);
 
-  // 2. Проверка ключа (для диагностики)
-  if (!API_KEY) {
-    alert("CRITICAL ERROR: API Key is missing. Please REDEPLOY in Vercel.");
-    return null;
-  }
+
 
   try {
     const voice = consultant === 'VIP' ? 'onyx' : 'shimmer'; 
@@ -36,7 +32,7 @@ export const speakText = async (
     if (!response.ok) {
       const errText = await response.text();
       console.error("API Error:", response.status, errText);
-      alert(`SERVER ERROR ${response.status}: ${errText.slice(0, 50)}`);
+      alert(lang === "en" ? "Voice unavailable. Please try again." : "Озвучка недоступна. Попробуйте ещё раз.");
       return null;
     }
 
@@ -47,7 +43,7 @@ export const speakText = async (
 
   } catch (error: any) {
     console.error("Network Error:", error);
-    alert(`NETWORK ERROR: ${error.message}`);
+    alert(lang === "en" ? "Connection failed." : "Ошибка связи.");
     return null;
   }
 };
