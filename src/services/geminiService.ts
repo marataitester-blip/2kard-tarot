@@ -45,10 +45,21 @@ export const analyzeRelationship = async (
   cards: TarotCard[], 
   problem: string, 
   mode: AppMode,
-  consultant: string
+  consultant: string,
+  lang: "ru" | "en" = "ru"
 ): Promise<string> => {
   try {
-    const prompt = generatePrompt(cards, problem, mode, consultant);
+    const prompt = lang === 'en'
+      ? [
+          consultant === 'VIP'
+            ? 'You are Messir, a perceptive, quietly ironic tarot reader. Explore the hidden motives, with warmth and restraint. Up to 200 words.'
+            : 'You are Margot, a lively, direct and supportive tarot reader. Give a concrete next step. Up to 180 words.',
+          'Write in natural British English, in character. Use Markdown.',
+          'Spread: ' + mode,
+          'Cards: ' + cards.map(card => card.nameEnglish || card.name).join(', '),
+          'Question: ' + problem
+        ].join('\n')
+      : generatePrompt(cards, problem, mode, consultant);
     
     // Отправляем на сервер текст и имя персонажа
     const response = await fetch('/api/analyze', {
@@ -69,10 +80,10 @@ export const analyzeRelationship = async (
     }
 
     const data = await response.json();
-    return data.choices[0].message.content || "Туман скрывает ответ...";
+    return data.choices[0].message.content || (lang === "en" ? "The answer is unclear. Please try again." : "Туман скрывает ответ...");
 
   } catch (error) {
     console.error("Error analyzing:", error);
-    return "Связь с астралом нестабильна. Попробуйте еще раз.";
+    return lang === "en" ? "We could not reach your reader. Please try again." : "Связь с астралом нестабильна. Попробуйте еще раз.";
   }
 };
