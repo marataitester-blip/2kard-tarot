@@ -1,70 +1,56 @@
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+export const config = { runtime: 'edge' };
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+const headers = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json'
+};
+
+function json(value, status) {
+  return new Response(JSON.stringify(value), { status, headers });
+}
+
+export default async function handler(request) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  const key = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_KEY;
+  if (!key) return json({ error: 'Reading service is not configured' }, 503);
+
+  let input;
+  try {
+    input = await request.json();
+  } catch {
+    return json({ error: 'Invalid JSON' }, 400);
+  }
+  if (!Array.isArray(input?.messages) || !input.messages.length) {
+    return json({ error: 'Messages required' }, 400);
   }
 
-  const apiKey = process.env.VITE_OPENROUTER_KEY;
-
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Server Error: API Key missing' });
-  }
+  const messir = input.character === 'VIP';
+  const model = messir
+    ? process.env.PSY_MESSIR_MODEL || 'anthropic/claude-sonnet-4.5'
+    : process.env.PSY_MARGOT_MODEL || 'qwen/qwen-2.5-72b-instruct';
 
   try {
-    const { messages, character } = req.body;
-
-    let selectedModel;
-    let tempSetting; // Настройка креативности
-
-    if (character === 'VIP') {
-       // --- МЕССИР ---
-       // Модель: Claude 3.5 Sonnet
-       selectedModel = "anthropic/claude-3.5-sonnet"; 
-       // Креатив: 0.6 (Чуть выше среднего, баланс между точностью и иронией)
-       tempSetting = 0.6;
-    } else {
-       // --- МАРГО ---
-       // Модель: Qwen 2.5 72B
-       selectedModel = "qwen/qwen-2.5-72b-instruct"; 
-       // Креатив: 0.7 (Стандарт для живого общения и практики)
-       tempSetting = 0.7;
-    }
-
-    console.log(`Персонаж: ${character}. Модель: ${selectedModel}. Temp: ${tempSetting}`);
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://2kard-tarot.vercel.app",
-        "X-Title": "Psy Tarot",
+        Authorization: 'Bearer ' + key,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://2kard-tarot.vercel.app',
+        'X-Title': 'Psy Tarot'
       },
-      body: JSON.stringify({
-        model: selectedModel,
-        messages: messages,
-        temperature: tempSetting // Применяем настройку креатива
-      })
+      body: JSON.stringify({ model, messages: input.messages, temperature: messir ? 0.6 : 0.7 })
     });
-
-    const data = await response.json();
-
     if (!response.ok) {
-        throw new Error(JSON.stringify(data));
+      console.error('Psy Tarot reading provider returned', response.status, model);
+      return json({ error: 'Reading provider unavailable' }, 502);
     }
-
-    res.status(200).json(data);
-
-  } catch (error) {
-    console.error("OpenRouter Error:", error);
-    res.status(500).json({ error: 'Ошибка связи с ИИ', details: error.message });
+    const data = await response.json();
+    if (!data.choices?.[0]?.message?.content) return json({ error: 'Empty reading' }, 502);
+    return json(data, 200);
+  } catch {
+    return json({ error: 'Reading provider unavailable' }, 502);
   }
 }
